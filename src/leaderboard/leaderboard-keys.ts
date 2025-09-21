@@ -11,6 +11,9 @@ export class LeaderboardKeys implements OnModuleInit {
   private todayKey: string;
   private thisWeekKey: string;
 
+  private todayExpire: number;
+  private thisWeekExpire: number;
+
   onModuleInit() {
     this.resetToday();
     this.resetThisWeekKey();
@@ -29,19 +32,11 @@ export class LeaderboardKeys implements OnModuleInit {
   }
 
   getTodayExpire(): number {
-    const now = new Date();
-    const tomorrow = new Date(now.getTime() + this.MS_IN_A_DAY);
-    tomorrow.setHours(0, 0, 0, 0);
-    return Math.floor((tomorrow.getTime() - now.getTime()) / 1000);
+    return this.todayExpire;
   }
 
   getThisWeekExpire(): number {
-    const now = new Date();
-    const nextMonday = new Date(
-      now.getTime() + (7 - now.getDay()) * this.MS_IN_A_DAY,
-    );
-    nextMonday.setHours(0, 0, 0, 0);
-    return Math.floor((nextMonday.getTime() - now.getTime()) / 1000);
+    return this.thisWeekExpire;
   }
 
   @Cron('0 0 * * *')
@@ -74,5 +69,51 @@ export class LeaderboardKeys implements OnModuleInit {
       .padStart(2, '0');
 
     this.thisWeekKey = `${this.KEY_PREFIX}:weekly:${year}-W${weekNumber}`;
+  }
+
+  // reset ttl-s only every minute to avoid too many operations
+  // add 5 minutes offset to ensure the keys expire after the day/week ends
+
+  private readonly RESET_EXPIRE_OFFSET = 5 * 60;
+
+  @Cron('0 * * * *')
+  resetTodayExpire(): void {
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + this.MS_IN_A_DAY);
+    tomorrow.setHours(0, 0, 0, 0);
+
+    Math.floor((tomorrow.getTime() - now.getTime()) / 1000);
+    this.todayExpire =
+      Math.floor((tomorrow.getTime() - now.getTime()) / 1000) +
+      this.RESET_EXPIRE_OFFSET;
+  }
+
+  @Cron('0 * * * *')
+  resetThisWeekExpire(): void {
+    const now = new Date();
+    const nextMonday = new Date(
+      now.getTime() + (7 - now.getDay()) * this.MS_IN_A_DAY,
+    );
+    nextMonday.setHours(0, 0, 0, 0);
+
+    this.thisWeekExpire =
+      Math.floor((nextMonday.getTime() - now.getTime()) / 1000) +
+      this.RESET_EXPIRE_OFFSET;
+  }
+
+  getStartOfToday(): Date {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  }
+
+  getStartOfThisWeek(): Date {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+    return monday;
   }
 }

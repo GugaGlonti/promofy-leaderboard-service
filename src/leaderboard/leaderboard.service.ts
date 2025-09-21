@@ -1,21 +1,56 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { LeaderboardRepository } from './leaderboard.repository';
+import { PlayerScoreDto } from '../common/dto/PlayerScore.dto';
+import { PlayerPositionDto } from '../common/dto/PlayerPosition.dto';
 @Injectable()
 export class LeaderboardService {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getDailyLeaderboard(limit: number): any {}
+  private readonly logger = new Logger(LeaderboardService.name);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getWeeklyLeaderboard(limit: number): any {}
+  constructor(private readonly leaderboardRepository: LeaderboardRepository) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getAllTimeLeaderboard(limit: number): any {}
+  getAllTimeLeaderboard(
+    limit: number,
+    page: number,
+    pageSize: number,
+  ): Promise<PlayerScoreDto[]> {
+    this.logger.debug(
+      `Fetching all-time leaderboard: limit=${limit}, page=${page}, pageSize=${pageSize}`,
+    );
+    return this.leaderboardRepository.getAllTimeLeaderboard(
+      limit,
+      (page - 1) * pageSize,
+    );
+  }
 
-  getCustomPeriodLeaderboard(
+  getPlayerPosition(
+    userId: string,
+    contextSize: number,
+  ): Promise<PlayerPositionDto> {
+    return this.leaderboardRepository.getPlayerPosition(userId, contextSize);
+  }
+
+  async getLeaderboardById(id: string): Promise<PlayerScoreDto[]> {
+    this.logger.debug(`Fetching leaderboard for id: ${id}`);
+    // get leaderboard by leaderboard-period i guess ...
+    return await Promise.resolve([]);
+  }
+
+  async getCustomPeriodLeaderboard(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    periodFrom: string,
+    startDate: string,
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    periodTo: string,
+    endDate: string,
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     limit: number,
-  ): any {}
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    page: number,
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    pageSize: number,
+  ): Promise<any[]> {
+    return await Promise.resolve([]);
+  }
 }
