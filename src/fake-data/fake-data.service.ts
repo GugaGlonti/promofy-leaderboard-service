@@ -11,15 +11,15 @@ import { NewPlayerEvent } from '../common/event/new-player.event';
 import { KafkaEvent } from '../common/event/KafkaEvent';
 import { FakeUser } from './dto/FakeUser.type';
 
-const WORKERS = 5;
+const FAKE_DATA_WORKERS = 2;
 
-const SCORE_VARIANCE = 100;
-const SCORE_UPDATE_PROBABILITY = 0.7;
-const SCORE_NEW_PLAYER_PROBABILITY = 0.1;
-const SEND_INTERVAL = 500;
+const FAKE_DATA_SCORE_VARIANCE = 100;
+const FAKE_DATA_SCORE_UPDATE_PROBABILITY = 0.7;
+const FAKE_DATA_SCORE_NEW_PLAYER_PROBABILITY = 0.1;
+const FAKE_DATA_SEND_INTERVAL = 500;
 
-const NEW_PLAYER_TOPIC = 'new_player';
-const SCORE_UPDATE_TOPIC = 'score_update';
+const FAKE_DATA_NEW_PLAYER_TOPIC = 'new_player';
+const FAKE_DATA_SCORE_UPDATE_TOPIC = 'score_update';
 
 @Injectable()
 export class FakeDataService implements OnModuleInit, OnModuleDestroy {
@@ -51,20 +51,22 @@ export class FakeDataService implements OnModuleInit, OnModuleDestroy {
   }
 
   private run() {
-    this.logger.log(`Starting ${WORKERS} workers to generate fake data...`);
-    for (let i = 0; i < WORKERS; i++) this.startWorker(i);
+    this.logger.log(
+      `Starting ${FAKE_DATA_WORKERS} workers to generate fake data...`,
+    );
+    for (let i = 0; i < FAKE_DATA_WORKERS; i++) this.startWorker(i);
   }
 
   private startWorker(id: number) {
     this.logger.log(`Worker ${id} started`);
     const worker = setInterval(() => {
-      if (Math.random() < SCORE_UPDATE_PROBABILITY) {
+      if (Math.random() < FAKE_DATA_SCORE_UPDATE_PROBABILITY) {
         this.sendFakeScore();
       }
-      if (Math.random() < SCORE_NEW_PLAYER_PROBABILITY) {
+      if (Math.random() < FAKE_DATA_SCORE_NEW_PLAYER_PROBABILITY) {
         this.sendFakeNewPlayer();
       }
-    }, SEND_INTERVAL);
+    }, FAKE_DATA_SEND_INTERVAL);
     this.workers.push(worker);
   }
 
@@ -72,7 +74,8 @@ export class FakeDataService implements OnModuleInit, OnModuleDestroy {
     try {
       const user =
         this.playerArray[Math.floor(Math.random() * this.playerArray.length)];
-      const scoreDelta = Math.floor(Math.random() * SCORE_VARIANCE) + 1;
+      const scoreDelta =
+        Math.floor(Math.random() * FAKE_DATA_SCORE_VARIANCE) + 1;
       const scoreUpdateEvent = new ScoreUpdateEvent(
         user.ID,
         scoreDelta,
@@ -80,7 +83,7 @@ export class FakeDataService implements OnModuleInit, OnModuleDestroy {
       );
       const event = new KafkaEvent(user.ID, scoreUpdateEvent);
 
-      this.kafkaProducer.emit(SCORE_UPDATE_TOPIC, event);
+      this.kafkaProducer.emit(FAKE_DATA_SCORE_UPDATE_TOPIC, event);
       this.logger.debug(`Sent score update for ${user.ID}: +${scoreDelta}`);
     } catch (error) {
       this.logger.error('Error sending score update:', error);
@@ -104,11 +107,11 @@ export class FakeDataService implements OnModuleInit, OnModuleDestroy {
         this.playerArray.push(user);
       }
 
-      const score = Math.floor(Math.random() * SCORE_VARIANCE) + 1;
+      const score = Math.floor(Math.random() * FAKE_DATA_SCORE_VARIANCE) + 1;
       const newPlayerEvent = new NewPlayerEvent(user.ID, score, new Date());
       const event = new KafkaEvent(user.ID, newPlayerEvent);
 
-      this.kafkaProducer.emit(NEW_PLAYER_TOPIC, event);
+      this.kafkaProducer.emit(FAKE_DATA_NEW_PLAYER_TOPIC, event);
       this.logger.debug(
         `Sent new player: ${user.ID} with initial score ${score}`,
       );

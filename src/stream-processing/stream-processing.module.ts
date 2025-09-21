@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { StreamProcessingService } from './stream-processing.service';
 import { StreamProcessingController } from './stream-processing.controller';
+import { LeaderboardModule } from '../leaderboard/leaderboard.module';
 
 @Module({
-  providers: [StreamProcessingService],
   controllers: [StreamProcessingController],
+  imports: [LeaderboardModule],
 })
 export class StreamProcessingModule {}
