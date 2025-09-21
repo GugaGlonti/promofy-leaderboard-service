@@ -6,18 +6,15 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class Leaderboard {
+export class LeaderboardDelta {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  userId: string;
+  @Column('int')
+  userId: number;
 
   @Column('int')
-  score: number;
-
-  @Column()
-  periodKey: string;
+  delta: number;
 
   @CreateDateColumn()
   createdAt: Date;

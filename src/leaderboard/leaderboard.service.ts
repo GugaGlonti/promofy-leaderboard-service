@@ -1,15 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { LeaderboardRepository } from './leaderboard.repository';
-
 @Injectable()
 export class LeaderboardService {
-  constructor(private readonly leaderboardRepository: LeaderboardRepository) {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getDailyLeaderboard(limit: number): any {}
 
-  initializePlayer(): any {
-    return this.leaderboardRepository.initializePlayer();
-  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getWeeklyLeaderboard(limit: number): any {}
 
-  updateScore(): any {
-    return this.leaderboardRepository.updateScore();
-  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getAllTimeLeaderboard(limit: number): any {}
+
+  getCustomPeriodLeaderboard(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    periodFrom: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    periodTo: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    limit: number,
+  ): any {}
 }
