@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { FakeDataModule } from './fake-data/fake-data.module';
-import { LeaderboardsModule } from './leaderboards/leaderboards.module';
+import { StreamProcessingModule } from './stream-processing/stream-processing.module';
 
 @Module({
-  imports: [FakeDataModule, LeaderboardsModule],
+  imports: [FakeDataModule, StreamProcessingModule],
   controllers: [AppController],
   providers: [AppService],
 })
