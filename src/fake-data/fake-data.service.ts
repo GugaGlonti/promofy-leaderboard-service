@@ -9,6 +9,7 @@ import { ClientKafka } from '@nestjs/microservices';
 import { ScoreUpdateEvent } from '../common/event/score-update.event';
 import { NewPlayerEvent } from '../common/event/new-player.event';
 import { KafkaEvent } from '../common/event/KafkaEvent';
+import { FakeUser } from './dto/FakeUser.type';
 
 const WORKERS = 5;
 
@@ -17,14 +18,18 @@ const SCORE_UPDATE_PROBABILITY = 0.7;
 const SCORE_NEW_PLAYER_PROBABILITY = 0.1;
 const SEND_INTERVAL = 500;
 
+const NEW_PLAYER_TOPIC = 'new_player';
+const SCORE_UPDATE_TOPIC = 'score_update';
+
 @Injectable()
 export class FakeDataService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(FakeDataService.name);
   private readonly workers: Array<NodeJS.Timeout> = [];
 
-  private readonly playerSet: Set<string> = new Set(['player_1']);
-  private readonly playerArray: string[] = Array.from(this.playerSet);
   private playerCounter = 1;
+  private readonly initialUser: FakeUser = { ID: 0, score: 0 };
+  private readonly playerSet: Set<FakeUser> = new Set([this.initialUser]);
+  private readonly playerArray: FakeUser[] = [this.initialUser];
 
   constructor(
     @Inject('KAFKA_PRODUCER')
@@ -54,58 +59,58 @@ export class FakeDataService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Worker ${id} started`);
     const worker = setInterval(() => {
       if (Math.random() < SCORE_UPDATE_PROBABILITY) {
-        this.sendFakeScore(id);
+        this.sendFakeScore();
       }
       if (Math.random() < SCORE_NEW_PLAYER_PROBABILITY) {
-        this.sendFakeNewPlayer(id);
+        this.sendFakeNewPlayer();
       }
     }, SEND_INTERVAL);
     this.workers.push(worker);
   }
 
-  private sendFakeScore(workerId: number) {
+  private sendFakeScore() {
     try {
-      const userId =
+      const user =
         this.playerArray[Math.floor(Math.random() * this.playerArray.length)];
       const scoreDelta = Math.floor(Math.random() * SCORE_VARIANCE) + 1;
       const scoreUpdateEvent = new ScoreUpdateEvent(
-        userId,
+        user.ID,
         scoreDelta,
         new Date(),
       );
+      const event = new KafkaEvent(user.ID, scoreUpdateEvent);
 
-      const topic = 'score_update';
-      const event = new KafkaEvent(workerId.toString(), scoreUpdateEvent);
-
-      this.kafkaProducer.emit(topic, event);
-      this.logger.debug(`Sent score update for ${userId}: +${scoreDelta}`);
+      this.kafkaProducer.emit(SCORE_UPDATE_TOPIC, event);
+      this.logger.debug(`Sent score update for ${user.ID}: +${scoreDelta}`);
     } catch (error) {
       this.logger.error('Error sending score update:', error);
     }
   }
 
-  private sendFakeNewPlayer(workerId: number) {
+  private sendFakeNewPlayer() {
     try {
       this.playerCounter++;
-      const userId = `player_${this.playerCounter}`;
+      const user = {
+        ID: this.playerCounter,
+        username: `player_${this.playerCounter}`,
+        score: 0,
+      };
 
-      if (this.playerSet.has(userId)) {
-        this.logger.warn(`Player ${userId} already exists, skipping`);
+      if (this.playerSet.has(user)) {
+        this.logger.warn(`Player ${user.username} already exists, skipping`);
         return;
       } else {
-        this.playerSet.add(userId);
-        this.playerArray.push(userId);
+        this.playerSet.add(user);
+        this.playerArray.push(user);
       }
 
       const score = Math.floor(Math.random() * SCORE_VARIANCE) + 1;
-      const newPlayerEvent = new NewPlayerEvent(userId, score, new Date());
+      const newPlayerEvent = new NewPlayerEvent(user.ID, score, new Date());
+      const event = new KafkaEvent(user.ID, newPlayerEvent);
 
-      const topic = 'new_player';
-      const event = new KafkaEvent(workerId.toString(), newPlayerEvent);
-
-      this.kafkaProducer.emit(topic, event);
+      this.kafkaProducer.emit(NEW_PLAYER_TOPIC, event);
       this.logger.debug(
-        `Sent new player: ${userId} with initial score ${score}`,
+        `Sent new player: ${user.ID} with initial score ${score}`,
       );
     } catch (error) {
       this.logger.error('Error sending new player:', error);
