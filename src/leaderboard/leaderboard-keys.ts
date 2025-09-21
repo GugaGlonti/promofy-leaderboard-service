@@ -12,8 +12,8 @@ export class LeaderboardKeys implements OnModuleInit {
   private thisWeekKey: string;
 
   onModuleInit() {
-    this.todayKey = this.getTodayKey();
-    this.thisWeekKey = this.getThisWeekKey();
+    this.resetToday();
+    this.resetThisWeekKey();
   }
 
   getTodayKey(): string {
