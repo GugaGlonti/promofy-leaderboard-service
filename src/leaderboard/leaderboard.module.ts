@@ -5,6 +5,7 @@ import Redis from 'ioredis';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LeaderboardDelta } from '../common/entity/leaderboard-delta.entity';
 import { LeaderboardKeys } from './leaderboard-keys';
+import { LeaderboardController } from './leaderboard.controller';
 
 const REDIS_HOST = 'localhost';
 const REDIS_PORT = 6379;
@@ -30,5 +31,6 @@ const RedisProvider: Provider<RedisClient> = {
     LeaderboardKeys,
   ],
   exports: [LeaderboardService, LeaderboardRepository],
+  controllers: [LeaderboardController],
 })
 export class LeaderboardModule {}
