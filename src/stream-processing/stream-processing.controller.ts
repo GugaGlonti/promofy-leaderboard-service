@@ -5,9 +5,9 @@ import { NewPlayerEvent } from '../common/event/new-player.event';
 import { KafkaPayload } from './decorators/KafkaPayload.decorator';
 import { KafkaEvent } from '../common/event/KafkaEvent';
 
-@Controller('leaderboards')
-export class LeaderboardsController {
-  private readonly logger = new Logger(LeaderboardsController.name);
+@Controller('stream-processing')
+export class StreamProcessingController {
+  private readonly logger = new Logger(StreamProcessingController.name);
 
   @MessagePattern('score_update')
   updateScore(

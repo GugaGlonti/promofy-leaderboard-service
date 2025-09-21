@@ -9,11 +9,11 @@ async function bootstrap() {
     transport: Transport.KAFKA,
     options: {
       client: {
-        clientId: 'leaderboard-service',
+        clientId: 'stream-processing-service',
         brokers: ['localhost:9092'],
       },
       consumer: {
-        groupId: 'leaderboard-consumer',
+        groupId: 'stream-processing-consumer',
       },
     },
   });
