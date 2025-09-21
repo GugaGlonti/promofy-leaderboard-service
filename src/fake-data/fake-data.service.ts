@@ -11,12 +11,12 @@ import { NewPlayerEvent } from '../common/event/new-player.event';
 import { KafkaEvent } from '../common/event/KafkaEvent';
 import { FakeUser } from './dto/FakeUser.type';
 
-const FAKE_DATA_WORKERS = 2;
+const FAKE_DATA_WORKERS = 1;
 
 const FAKE_DATA_SCORE_VARIANCE = 100;
 const FAKE_DATA_SCORE_UPDATE_PROBABILITY = 0.7;
 const FAKE_DATA_SCORE_NEW_PLAYER_PROBABILITY = 0.1;
-const FAKE_DATA_SEND_INTERVAL = 500;
+const FAKE_DATA_SEND_INTERVAL = 1000;
 
 const FAKE_DATA_NEW_PLAYER_TOPIC = 'new_player';
 const FAKE_DATA_SCORE_UPDATE_TOPIC = 'score_update';

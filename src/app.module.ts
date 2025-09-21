@@ -5,6 +5,7 @@ import { FakeDataModule } from './fake-data/fake-data.module';
 import { StreamProcessingModule } from './stream-processing/stream-processing.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 
 const POSTGRES_PORT = 5432;
 const POSTGRES_HOST = 'localhost';
@@ -26,6 +27,7 @@ const SYNCHRONIZE = process.env.NODE_ENV !== 'production';
       autoLoadEntities: AUTOLOAD_ENTITIES,
       synchronize: SYNCHRONIZE,
     }),
+    ScheduleModule.forRoot(),
     FakeDataModule,
     StreamProcessingModule,
     LeaderboardModule,
