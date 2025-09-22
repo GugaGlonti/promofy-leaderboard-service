@@ -71,8 +71,8 @@ export class LeaderboardRepository {
 
   async getLeaderboardFromRedis(
     id: string,
-    startDate: string,
-    endDate: string,
+    startDate: string, // TODO: think of something
+    endDate: string, // TODO: think of something
     limit: number,
     page: number,
     pageSize: number,
@@ -81,12 +81,10 @@ export class LeaderboardRepository {
     data: PlayerScoreDto[];
   }> {
     const leaderboardKey = this.leaderboardCache.getKey(id);
-
     if (!leaderboardKey) return { success: false, data: [] };
 
     const start = (page - 1) * pageSize;
     if (limit > 0 && start >= limit) return { success: false, data: [] };
-
     const end =
       limit > 0
         ? Math.min(start + pageSize - 1, limit - 1)
@@ -166,46 +164,20 @@ export class LeaderboardRepository {
   ): Promise<void> {
     await this.redis
       .multi()
-      .zincrby(this.leaderboardCache.getTodayKey(), scoreDelta, playerId) //.expire(dailyKey, this.leaderboardKeys.getTodayExpire())
-      .zincrby(this.leaderboardCache.getThisWeekKey(), scoreDelta, playerId) //.expire(weeklyKey, this.leaderboardKeys.getThisWeekExpire())
+      .zincrby(this.leaderboardCache.getTodayKey(), scoreDelta, playerId)
+      //.expire(dailyKey, this.leaderboardKeys.getTodayExpire())
+      .zincrby(this.leaderboardCache.getThisWeekKey(), scoreDelta, playerId)
+      //.expire(weeklyKey, this.leaderboardKeys.getThisWeekExpire())
       .zincrby(this.leaderboardCache.getAllTime(), scoreDelta, playerId)
       .exec();
   }
 
   async getAllLeaderboards(): Promise<AllLeaderboardsDto> {
-    const Leaderboards = await this.leaderboard.find();
-    const leaderboards = Leaderboards.map((lb) => ({
-      id: lb.id,
-      type: lb.type,
-      date: lb.date,
-      weekNumber: lb.weekNumber,
-      year: lb.year,
-    }));
-
-    const allTimeLeaderboardUuid =
-      this.leaderboardCache.getAllTimeLeaderboard().id;
-
-    const weeklyLeaderboardUuids = leaderboards
-      .filter((lb) => lb.type === 'weekly')
-      .map((lb) => lb.id);
-
-    const dailyLeaderboardUuids = leaderboards
-      .filter((lb) => lb.type === 'daily')
-      .map((lb) => lb.id);
-
-    return new AllLeaderboardsDto(
-      {
-        UUID: allTimeLeaderboardUuid,
-        URL: `localhost:3000/leaderboards/${allTimeLeaderboardUuid}`,
-      },
-      weeklyLeaderboardUuids.map((uuid) => ({
-        UUID: uuid,
-        URL: `localhost:3000/leaderboards/${uuid}`,
-      })),
-      dailyLeaderboardUuids.map((uuid) => ({
-        UUID: uuid,
-        URL: `localhost:3000/leaderboards/${uuid}`,
-      })),
+    const leaderboards = await this.leaderboard.find();
+    return AllLeaderboardsDto.ofUUIDs(
+      this.leaderboardCache.getAllTimeLeaderboard().id,
+      leaderboards.filter((lb) => lb.type === 'weekly').map((lb) => lb.id),
+      leaderboards.filter((lb) => lb.type === 'daily').map((lb) => lb.id),
     );
   }
 }

@@ -4,6 +4,7 @@ import { PlayerScoreDto } from '../common/dto/PlayerScore.dto';
 import { PlayerPositionDto } from '../common/dto/PlayerPosition.dto';
 import { LeaderboardNotFoundException } from '../common/exception/LeaderboardNotFound.exception';
 import { AllLeaderboardsDto } from '../common/dto/AllLeaderboards.dto';
+
 @Injectable()
 export class LeaderboardService {
   private readonly logger = new Logger(LeaderboardService.name);
