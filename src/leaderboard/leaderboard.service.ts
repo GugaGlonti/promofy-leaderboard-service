@@ -8,18 +8,14 @@ export class LeaderboardService {
 
   constructor(private readonly leaderboardRepository: LeaderboardRepository) {}
 
-  getAllTimeLeaderboard(
+  getLeaderboard(
+    id: string,
     limit: number,
     page: number,
     pageSize: number,
   ): Promise<PlayerScoreDto[]> {
-    this.logger.debug(
-      `Fetching all-time leaderboard: limit=${limit}, page=${page}, pageSize=${pageSize}`,
-    );
-    return this.leaderboardRepository.getAllTimeLeaderboard(
-      limit,
-      (page - 1) * pageSize,
-    );
+    this.logger.debug(`Fetching leaderboard for id: ${id}`);
+    return this.leaderboardRepository.getLeaderboard(id, limit, page, pageSize);
   }
 
   getPlayerPosition(
