@@ -7,6 +7,7 @@ import { PlayerScoreDto } from '../common/dto/PlayerScore.dto';
 import { LeaderboardDelta } from '../common/entity/leaderboard-delta.entity';
 import { LeaderboardCache } from './leaderboard-cache';
 import type { RedisClient } from './leaderboard.module';
+import { AllLeaderboardsDto } from '../common/dto/AllLeaderboards.dto';
 
 @Injectable()
 export class LeaderboardRepository {
@@ -61,7 +62,6 @@ export class LeaderboardRepository {
         startDate,
         endDate,
       })
-
       .groupBy('delta.playerId')
       .orderBy('"totalScore"', 'DESC')
       .skip(offset)
@@ -69,25 +69,43 @@ export class LeaderboardRepository {
       .getRawMany<PlayerScoreDto>();
   }
 
-  async getLeaderboard(
+  async getLeaderboardFromRedis(
     id: string,
     startDate: string,
     endDate: string,
     limit: number,
     page: number,
     pageSize: number,
-  ): Promise<PlayerScoreDto[]> {
-    return this.getLeaderboardFromPostgres(
-      id,
-      startDate,
-      endDate,
-      limit,
-      page,
-      pageSize,
+  ): Promise<{
+    success: boolean;
+    data: PlayerScoreDto[];
+  }> {
+    const leaderboardKey = this.leaderboardCache.getKey(id);
+
+    if (!leaderboardKey) return { success: false, data: [] };
+
+    const start = (page - 1) * pageSize;
+    if (limit > 0 && start >= limit) return { success: false, data: [] };
+
+    const end =
+      limit > 0
+        ? Math.min(start + pageSize - 1, limit - 1)
+        : start + pageSize - 1;
+
+    const entries = await this.redis.zrevrange(
+      leaderboardKey,
+      start,
+      end,
+      'WITHSCORES',
     );
+
+    const data: PlayerScoreDto[] = [];
+    for (let i = 0; i < entries.length; i += 2)
+      data.push(PlayerScoreDto.of(entries[i], entries[i + 1]));
+    return { success: true, data };
   }
 
-  async getPlayerPosition(
+  async getPlayerPositionFromRedis(
     userId: string,
     contextSize: number,
   ): Promise<PlayerPositionDto> {
@@ -152,5 +170,42 @@ export class LeaderboardRepository {
       .zincrby(this.leaderboardCache.getThisWeekKey(), scoreDelta, playerId) //.expire(weeklyKey, this.leaderboardKeys.getThisWeekExpire())
       .zincrby(this.leaderboardCache.getAllTime(), scoreDelta, playerId)
       .exec();
+  }
+
+  async getAllLeaderboards(): Promise<AllLeaderboardsDto> {
+    const Leaderboards = await this.leaderboard.find();
+    const leaderboards = Leaderboards.map((lb) => ({
+      id: lb.id,
+      type: lb.type,
+      date: lb.date,
+      weekNumber: lb.weekNumber,
+      year: lb.year,
+    }));
+
+    const allTimeLeaderboardUuid =
+      this.leaderboardCache.getAllTimeLeaderboard().id;
+
+    const weeklyLeaderboardUuids = leaderboards
+      .filter((lb) => lb.type === 'weekly')
+      .map((lb) => lb.id);
+
+    const dailyLeaderboardUuids = leaderboards
+      .filter((lb) => lb.type === 'daily')
+      .map((lb) => lb.id);
+
+    return new AllLeaderboardsDto(
+      {
+        UUID: allTimeLeaderboardUuid,
+        URL: `localhost:3000/leaderboards/${allTimeLeaderboardUuid}`,
+      },
+      weeklyLeaderboardUuids.map((uuid) => ({
+        UUID: uuid,
+        URL: `localhost:3000/leaderboards/${uuid}`,
+      })),
+      dailyLeaderboardUuids.map((uuid) => ({
+        UUID: uuid,
+        URL: `localhost:3000/leaderboards/${uuid}`,
+      })),
+    );
   }
 }

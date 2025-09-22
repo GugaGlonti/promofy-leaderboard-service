@@ -1,5 +1,8 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { LeaderboardService } from './leaderboard.service';
+import { PlayerScoreDto } from '../common/dto/PlayerScore.dto';
+import { PlayerPositionDto } from '../common/dto/PlayerPosition.dto';
+import { AllLeaderboardsDto } from '../common/dto/AllLeaderboards.dto';
 
 @Controller('leaderboards')
 export class LeaderboardController {
@@ -13,7 +16,7 @@ export class LeaderboardController {
     @Query('limit') limit = 50,
     @Query('page') page = 1,
     @Query('pageSize') pageSize = 50,
-  ) {
+  ): Promise<PlayerScoreDto[]> {
     return this.leaderboardService.getLeaderboard(
       id,
       startDate,
@@ -29,12 +32,17 @@ export class LeaderboardController {
     //@Param('id') id: string,
     @Param('userId') userId: string,
     @Query('contextSize') contextSize = 5,
-  ) {
+  ): Promise<PlayerPositionDto> {
     return this.leaderboardService.getPlayerPosition(userId, contextSize);
   }
 
   @Get(':id/export')
   exportLeaderboard(@Param('id') id: string) {
     return { message: `Exporting leaderboard data for id ${id}` };
+  }
+
+  @Get()
+  async getAllLeaderboards(): Promise<AllLeaderboardsDto> {
+    return this.leaderboardService.getAllLeaderboards();
   }
 }

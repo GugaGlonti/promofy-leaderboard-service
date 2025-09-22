@@ -69,8 +69,10 @@ export class FakeDataService implements OnModuleInit, OnModuleDestroy {
     try {
       const user =
         this.playerArray[Math.floor(Math.random() * this.playerArray.length)];
+
       const scoreDelta =
-        Math.floor(Math.random() * this.config.scoreVariance) + 1;
+        Math.floor((Math.random() * 2 - 0.5) * this.config.scoreVariance) || 1;
+
       const scoreUpdateEvent = new ScoreUpdateEvent(
         user.ID,
         scoreDelta,
