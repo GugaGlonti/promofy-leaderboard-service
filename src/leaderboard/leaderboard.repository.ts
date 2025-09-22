@@ -39,6 +39,8 @@ export class LeaderboardRepository {
 
   async getLeaderboardFromPostgres(
     id: string,
+    startDate: string,
+    endDate: string,
     limit: number,
     page: number,
     pageSize: number,
@@ -55,6 +57,11 @@ export class LeaderboardRepository {
       .select('delta.playerId', 'playerId')
       .addSelect('SUM(delta.scoreDelta)', 'totalScore')
       .where('leaderboard.id = :id', { id })
+      .andWhere('delta.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+
       .groupBy('delta.playerId')
       .orderBy('"totalScore"', 'DESC')
       .skip(offset)
@@ -64,11 +71,20 @@ export class LeaderboardRepository {
 
   async getLeaderboard(
     id: string,
+    startDate: string,
+    endDate: string,
     limit: number,
     page: number,
     pageSize: number,
   ): Promise<PlayerScoreDto[]> {
-    return this.getLeaderboardFromPostgres(id, limit, page, pageSize);
+    return this.getLeaderboardFromPostgres(
+      id,
+      startDate,
+      endDate,
+      limit,
+      page,
+      pageSize,
+    );
   }
 
   async getPlayerPosition(
