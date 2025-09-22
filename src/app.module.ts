@@ -26,6 +26,7 @@ const SYNCHRONIZE = process.env.NODE_ENV !== 'production';
       database: POSTGRES_DB,
       autoLoadEntities: AUTOLOAD_ENTITIES,
       synchronize: SYNCHRONIZE,
+      dropSchema: true,
     }),
     ScheduleModule.forRoot(),
     FakeDataModule,

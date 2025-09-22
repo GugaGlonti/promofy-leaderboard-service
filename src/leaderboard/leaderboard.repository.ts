@@ -1,11 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LeaderboardDelta } from '../common/entity/leaderboard-delta.entity';
-import type { RedisClient } from './leaderboard.module';
-import { LeaderboardKeys } from './leaderboard-keys';
-import { PlayerScoreDto } from '../common/dto/PlayerScore.dto';
 import { PlayerPositionDto } from '../common/dto/PlayerPosition.dto';
+import { PlayerScoreDto } from '../common/dto/PlayerScore.dto';
+import { LeaderboardDelta } from '../common/entity/leaderboard-delta.entity';
+import { LeaderboardCache } from './leaderboard-cache';
+import type { RedisClient } from './leaderboard.module';
 
 const NEW_PLAYER_INITIAL_SCORE = 1000;
 
@@ -20,52 +20,26 @@ export class LeaderboardRepository {
     @Inject('REDIS_CLIENT')
     private readonly redis: RedisClient,
 
-    private readonly leaderboardKeys: LeaderboardKeys,
+    private readonly leaderboardCache: LeaderboardCache,
   ) {}
 
   async initializePlayer(userId: number, newScore: number): Promise<void> {
     this.logger.debug(`Initializing player ${userId} with score ${newScore}`);
-    const delta = NEW_PLAYER_INITIAL_SCORE ?? newScore;
-
-    await this.deltas.insert({ userId, delta, createdAt: new Date() });
-
-    const dailyKey = this.leaderboardKeys.getTodayKey();
-    const weeklyKey = this.leaderboardKeys.getThisWeekKey();
-    const allTimeKey = this.leaderboardKeys.getAllTime();
-
-    await this.redis
-      .multi()
-      .zadd(dailyKey, delta, userId)
-      //.expire(dailyKey, this.leaderboardKeys.getTodayExpire())
-      .zadd(weeklyKey, delta, userId)
-      //.expire(weeklyKey, this.leaderboardKeys.getThisWeekExpire())
-      .zadd(allTimeKey, delta, userId)
-      .exec();
+    await this.addToDatabase(userId, NEW_PLAYER_INITIAL_SCORE ?? newScore);
+    await this.addToRedis(userId, NEW_PLAYER_INITIAL_SCORE ?? newScore);
   }
 
   async updateScore(userId: number, scoreDelta: number): Promise<void> {
     this.logger.debug(`Updating player ${userId} with delta ${scoreDelta}`);
-    await this.deltas.save({ userId, delta: scoreDelta });
-
-    const dailyKey = this.leaderboardKeys.getTodayKey();
-    const weeklyKey = this.leaderboardKeys.getThisWeekKey();
-    const allTimeKey = this.leaderboardKeys.getAllTime();
-
-    await this.redis
-      .multi()
-      .zincrby(dailyKey, scoreDelta, userId)
-      //.expire(dailyKey, this.leaderboardKeys.getTodayExpire())
-      .zincrby(weeklyKey, scoreDelta, userId)
-      //.expire(weeklyKey, this.leaderboardKeys.getThisWeekExpire())
-      .zincrby(allTimeKey, scoreDelta, userId)
-      .exec();
+    await this.addToDatabase(userId, scoreDelta);
+    await this.addToRedis(userId, scoreDelta);
   }
 
   async getAllTimeLeaderboard(
     limit: number,
     offset: number,
   ): Promise<PlayerScoreDto[]> {
-    const allTimeKey = this.leaderboardKeys.getAllTime();
+    const allTimeKey = this.leaderboardCache.getAllTime();
     const playerScores: PlayerScoreDto[] = [];
 
     try {
@@ -77,9 +51,8 @@ export class LeaderboardRepository {
       );
 
       return redisResult.reduce((acc, curr, index) => {
-        if (index % 2 === 0) {
+        if (index % 2 === 0)
           acc.push(PlayerScoreDto.of(curr, redisResult[index + 1]));
-        }
         return acc;
       }, playerScores);
     } catch (error) {
@@ -107,7 +80,7 @@ export class LeaderboardRepository {
     userId: string,
     contextSize: number,
   ): Promise<PlayerPositionDto> {
-    const allTimeKey = this.leaderboardKeys.getAllTime();
+    const allTimeKey = this.leaderboardCache.getAllTime();
 
     try {
       const playerPosition = await this.redis.zrevrank(allTimeKey, userId);
@@ -116,7 +89,7 @@ export class LeaderboardRepository {
       const start = Math.max(playerPosition - contextSize, 0);
       const end = playerPosition + contextSize;
 
-      const contextResults = await this.redis.zrevrange(
+      const context = await this.redis.zrevrange(
         allTimeKey,
         start,
         end,
@@ -124,19 +97,13 @@ export class LeaderboardRepository {
       );
 
       const scores: PlayerScoreDto[] = [];
-      for (let i = 0; i < contextResults.length; i += 2) {
-        scores.push(
-          PlayerScoreDto.of(contextResults[i], contextResults[i + 1]),
-        );
-      }
+      for (let i = 0; i < context.length; i += 2)
+        scores.push(PlayerScoreDto.of(context[i], context[i + 1]));
 
-      const playerIndex = scores.findIndex(
-        (p) => p.getUserId() === Number(userId),
-      );
-
-      const playerScore = scores[playerIndex].getScore();
-      const before = scores.slice(0, playerIndex);
-      const after = scores.slice(playerIndex + 1);
+      const player = scores.findIndex((p) => p.getUserId() === Number(userId));
+      const playerScore = scores[player].getScore();
+      const before = scores.slice(0, player);
+      const after = scores.slice(player + 1);
 
       return new PlayerPositionDto(
         playerPosition + 1,
@@ -149,5 +116,30 @@ export class LeaderboardRepository {
       this.logger.error(`Error fetching player position from Redis:`, error);
       return PlayerPositionDto.empty();
     }
+  }
+
+  private async addToDatabase(playerId: number, scoreDelta: number) {
+    return this.deltas.save({
+      playerId,
+      scoreDelta,
+      createdAt: new Date(),
+      leaderboards: [
+        this.leaderboardCache.getTodayLeaderboard(),
+        this.leaderboardCache.getThisWeekLeaderboard(),
+        this.leaderboardCache.getAllTimeLeaderboard(),
+      ],
+    });
+  }
+
+  private async addToRedis(
+    playerId: number,
+    scoreDelta: number,
+  ): Promise<void> {
+    await this.redis
+      .multi()
+      .zincrby(this.leaderboardCache.getTodayKey(), scoreDelta, playerId) //.expire(dailyKey, this.leaderboardKeys.getTodayExpire())
+      .zincrby(this.leaderboardCache.getThisWeekKey(), scoreDelta, playerId) //.expire(weeklyKey, this.leaderboardKeys.getThisWeekExpire())
+      .zincrby(this.leaderboardCache.getAllTime(), scoreDelta, playerId)
+      .exec();
   }
 }

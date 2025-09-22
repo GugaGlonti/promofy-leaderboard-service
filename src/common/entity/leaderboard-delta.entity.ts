@@ -1,21 +1,20 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany } from 'typeorm';
+import { Leaderboard } from './leaderboard.entity';
 
 @Entity()
 export class LeaderboardDelta {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('int')
-  userId: number;
+  @Column()
+  playerId: number;
 
-  @Column('int')
-  delta: number;
+  @Column()
+  scoreDelta: number;
 
-  @CreateDateColumn()
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
+
+  @ManyToMany(() => Leaderboard, (leaderboard) => leaderboard.deltas)
+  leaderboards: Leaderboard[];
 }

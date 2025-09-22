@@ -4,8 +4,9 @@ import { LeaderboardRepository } from './leaderboard.repository';
 import Redis from 'ioredis';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LeaderboardDelta } from '../common/entity/leaderboard-delta.entity';
-import { LeaderboardKeys } from './leaderboard-keys';
+import { LeaderboardCache } from './leaderboard-cache';
 import { LeaderboardController } from './leaderboard.controller';
+import { Leaderboard } from '../common/entity/leaderboard.entity';
 
 const REDIS_HOST = 'localhost';
 const REDIS_PORT = 6379;
@@ -23,12 +24,12 @@ const RedisProvider: Provider<RedisClient> = {
 };
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LeaderboardDelta])],
+  imports: [TypeOrmModule.forFeature([LeaderboardDelta, Leaderboard])],
   providers: [
     LeaderboardService,
     LeaderboardRepository,
     RedisProvider,
-    LeaderboardKeys,
+    LeaderboardCache,
   ],
   exports: [LeaderboardService, LeaderboardRepository],
   controllers: [LeaderboardController],
