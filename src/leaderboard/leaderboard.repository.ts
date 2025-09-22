@@ -7,8 +7,6 @@ import { LeaderboardDelta } from '../common/entity/leaderboard-delta.entity';
 import { LeaderboardCache } from './leaderboard-cache';
 import type { RedisClient } from './leaderboard.module';
 
-const NEW_PLAYER_INITIAL_SCORE = 1000;
-
 @Injectable()
 export class LeaderboardRepository {
   private readonly logger = new Logger(LeaderboardRepository.name);
@@ -25,8 +23,8 @@ export class LeaderboardRepository {
 
   async initializePlayer(userId: number, newScore: number): Promise<void> {
     this.logger.debug(`Initializing player ${userId} with score ${newScore}`);
-    await this.addToDatabase(userId, NEW_PLAYER_INITIAL_SCORE ?? newScore);
-    await this.addToRedis(userId, NEW_PLAYER_INITIAL_SCORE ?? newScore);
+    await this.addToDatabase(userId, newScore);
+    await this.addToRedis(userId, newScore);
   }
 
   async updateScore(userId: number, scoreDelta: number): Promise<void> {

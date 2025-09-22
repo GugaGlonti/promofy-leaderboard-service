@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { Module, Provider } from '@nestjs/common';
 import { LeaderboardService } from './leaderboard.service';
 import { LeaderboardRepository } from './leaderboard.repository';
@@ -8,17 +9,15 @@ import { LeaderboardCache } from './leaderboard-cache';
 import { LeaderboardController } from './leaderboard.controller';
 import { Leaderboard } from '../common/entity/leaderboard.entity';
 
-const REDIS_HOST = 'localhost';
-const REDIS_PORT = 6379;
-
 export type RedisClient = Redis;
 
 const RedisProvider: Provider<RedisClient> = {
+  inject: [ConfigService],
   provide: 'REDIS_CLIENT',
-  useFactory: (): RedisClient => {
+  useFactory: (configService: ConfigService): RedisClient => {
     return new Redis({
-      host: REDIS_HOST,
-      port: REDIS_PORT,
+      host: configService.getOrThrow<string>('REDIS_HOST'),
+      port: configService.getOrThrow<number>('REDIS_PORT'),
     });
   },
 };
