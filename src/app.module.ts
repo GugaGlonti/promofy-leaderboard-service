@@ -6,27 +6,29 @@ import { StreamProcessingModule } from './stream-processing/stream-processing.mo
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
-
-const POSTGRES_PORT = 5432;
-const POSTGRES_HOST = 'localhost';
-const POSTGRES_USER = 'postgres';
-const POSTGRES_PASSWORD = 'postgres';
-const POSTGRES_DB = 'leaderboard';
-const AUTOLOAD_ENTITIES = true;
-const SYNCHRONIZE = process.env.NODE_ENV !== 'production';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: POSTGRES_HOST,
-      port: POSTGRES_PORT,
-      username: POSTGRES_USER,
-      password: POSTGRES_PASSWORD,
-      database: POSTGRES_DB,
-      autoLoadEntities: AUTOLOAD_ENTITIES,
-      synchronize: SYNCHRONIZE,
-      dropSchema: true,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: `.development.env`,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.getOrThrow<string>('POSTGRES_HOST'),
+        port: Number(configService.getOrThrow<string>('POSTGRES_PORT')),
+        username: configService.getOrThrow<string>('POSTGRES_USER'),
+        password: configService.getOrThrow<string>('POSTGRES_PASSWORD'),
+        database: configService.getOrThrow<string>('POSTGRES_DB'),
+        autoLoadEntities:
+          configService.getOrThrow<string>('AUTOLOAD_ENTITIES') === 'true',
+        synchronize: configService.getOrThrow<string>('SYNCHRONIZE') === 'true',
+        dropSchema: configService.getOrThrow<string>('DROP_SCHEMA') === 'true',
+      }),
     }),
     ScheduleModule.forRoot(),
     FakeDataModule,
