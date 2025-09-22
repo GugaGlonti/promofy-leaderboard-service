@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { Leaderboard } from '../common/entity/leaderboard.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { RedisKey } from 'ioredis';
 
 @Injectable()
 export class LeaderboardCache implements OnModuleInit {
@@ -13,6 +14,7 @@ export class LeaderboardCache implements OnModuleInit {
 
   private todayKey: string;
   private thisWeekKey: string;
+  private allTimeKey = `${this.KEY_PREFIX}:all-time`;
 
   private todayExpire: number;
   private thisWeekExpire: number;
@@ -30,6 +32,12 @@ export class LeaderboardCache implements OnModuleInit {
     await this.resetToday();
     await this.resetThisWeekKey();
     await this.resetAllTimeKey();
+  }
+
+  getKey(id: string): RedisKey | undefined {
+    if (id == this.todayLeaderboard.id) return this.todayKey;
+    if (id == this.thisWeekLeaderboard.id) return this.thisWeekKey;
+    if (id == this.allTimeLeaderboard.id) return this.allTimeKey;
   }
 
   getTodayLeaderboard(): Leaderboard {
@@ -59,7 +67,7 @@ export class LeaderboardCache implements OnModuleInit {
   }
 
   getAllTime(): string {
-    return `${this.KEY_PREFIX}:all-time`;
+    return this.allTimeKey;
   }
 
   getTodayExpire(): number {

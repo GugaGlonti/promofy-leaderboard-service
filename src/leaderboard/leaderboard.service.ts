@@ -2,13 +2,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import { LeaderboardRepository } from './leaderboard.repository';
 import { PlayerScoreDto } from '../common/dto/PlayerScore.dto';
 import { PlayerPositionDto } from '../common/dto/PlayerPosition.dto';
+import { LeaderboardNotFoundException } from '../common/exception/LeaderboardNotFound.exception';
+import { AllLeaderboardsDto } from '../common/dto/AllLeaderboards.dto';
 @Injectable()
 export class LeaderboardService {
   private readonly logger = new Logger(LeaderboardService.name);
 
   constructor(private readonly leaderboardRepository: LeaderboardRepository) {}
 
-  getLeaderboard(
+  async getLeaderboard(
     id: string,
     startDate: string,
     endDate: string,
@@ -17,45 +19,49 @@ export class LeaderboardService {
     pageSize: number,
   ): Promise<PlayerScoreDto[]> {
     this.logger.debug(`Fetching leaderboard for id: ${id}`);
-    return this.leaderboardRepository.getLeaderboard(
-      id,
-      startDate,
-      endDate,
-      limit,
-      page,
-      pageSize,
-    );
+
+    try {
+      const { success, data } =
+        await this.leaderboardRepository.getLeaderboardFromRedis(
+          id,
+          startDate,
+          endDate,
+          limit,
+          page,
+          pageSize,
+        );
+      if (success) return data;
+    } catch (error) {
+      this.logger.error(`Error fetching leaderboard from Redis:`, error);
+    }
+
+    try {
+      return this.leaderboardRepository.getLeaderboardFromPostgres(
+        id,
+        startDate,
+        endDate,
+        limit,
+        page,
+        pageSize,
+      );
+    } catch (error) {
+      this.logger.error(`Error fetching leaderboard from Postgres:`, error);
+    }
+
+    throw new LeaderboardNotFoundException(id);
   }
 
   getPlayerPosition(
     userId: string,
     contextSize: number,
   ): Promise<PlayerPositionDto> {
-    return this.leaderboardRepository.getPlayerPosition(userId, contextSize);
+    return this.leaderboardRepository.getPlayerPositionFromRedis(
+      userId,
+      contextSize,
+    );
   }
 
-  async getLeaderboardById(id: string): Promise<PlayerScoreDto[]> {
-    this.logger.debug(`Fetching leaderboard for id: ${id}`);
-    // get leaderboard by leaderboard-period i guess ...
-    return await Promise.resolve([]);
-  }
-
-  async getCustomPeriodLeaderboard(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    startDate: string,
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    endDate: string,
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    limit: number,
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    page: number,
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    pageSize: number,
-  ): Promise<any[]> {
-    return await Promise.resolve([]);
+  async getAllLeaderboards(): Promise<AllLeaderboardsDto> {
+    return this.leaderboardRepository.getAllLeaderboards();
   }
 }
