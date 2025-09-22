@@ -10,12 +10,21 @@ export class LeaderboardService {
 
   getLeaderboard(
     id: string,
+    startDate: string,
+    endDate: string,
     limit: number,
     page: number,
     pageSize: number,
   ): Promise<PlayerScoreDto[]> {
     this.logger.debug(`Fetching leaderboard for id: ${id}`);
-    return this.leaderboardRepository.getLeaderboard(id, limit, page, pageSize);
+    return this.leaderboardRepository.getLeaderboard(
+      id,
+      startDate,
+      endDate,
+      limit,
+      page,
+      pageSize,
+    );
   }
 
   getPlayerPosition(

@@ -8,13 +8,20 @@ export class LeaderboardController {
   @Get(':id')
   async getLeaderboard(
     @Param('id') id: string = 'global',
-    //@Query('startDate') startDate?: string,
-    //@Query('endDate') endDate?: string,
+    @Query('startDate') startDate = '1970-01-01T00:00:00',
+    @Query('endDate') endDate = '9999-12-31T23:59:59',
     @Query('limit') limit = 50,
     @Query('page') page = 1,
     @Query('pageSize') pageSize = 50,
   ) {
-    return this.leaderboardService.getLeaderboard(id, limit, page, pageSize);
+    return this.leaderboardService.getLeaderboard(
+      id,
+      startDate,
+      endDate,
+      limit,
+      page,
+      pageSize,
+    );
   }
 
   @Get(':id/players/:userId')
