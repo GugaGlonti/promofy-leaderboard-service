@@ -6,8 +6,8 @@ export class PlayerPositionDto {
     private readonly totalScore: number,
 
     private readonly contextSize: number,
-    private readonly before: PlayerScoreDto[],
-    private readonly after: PlayerScoreDto[],
+    private readonly above: PlayerScoreDto[],
+    private readonly below: PlayerScoreDto[],
   ) {}
 
   static empty(): PlayerPositionDto {
