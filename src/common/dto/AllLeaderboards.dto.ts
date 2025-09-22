@@ -15,4 +15,21 @@ export class AllLeaderboardsDto {
       URL: string;
     }[],
   ) {}
+
+  static ofUUIDs(allTime: string, weeklies: string[], dailies: string[]) {
+    return new AllLeaderboardsDto(
+      {
+        UUID: allTime,
+        URL: `localhost:3000/leaderboards/${allTime}`,
+      },
+      weeklies.map((uuid) => ({
+        UUID: uuid,
+        URL: `localhost:3000/leaderboards/${uuid}`,
+      })),
+      dailies.map((uuid) => ({
+        UUID: uuid,
+        URL: `localhost:3000/leaderboards/${uuid}`,
+      })),
+    );
+  }
 }
