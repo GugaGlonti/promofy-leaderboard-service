@@ -1,3 +1,4 @@
+import { Leaderboard } from './../common/entity/leaderboard.entity';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -14,6 +15,9 @@ export class LeaderboardRepository {
   constructor(
     @InjectRepository(LeaderboardDelta)
     private readonly deltas: Repository<LeaderboardDelta>,
+
+    @InjectRepository(Leaderboard)
+    private readonly leaderboard: Repository<Leaderboard>,
 
     @Inject('REDIS_CLIENT')
     private readonly redis: RedisClient,
@@ -33,45 +37,38 @@ export class LeaderboardRepository {
     await this.addToRedis(userId, scoreDelta);
   }
 
-  async getAllTimeLeaderboard(
+  async getLeaderboardFromPostgres(
+    id: string,
     limit: number,
-    offset: number,
+    page: number,
+    pageSize: number,
   ): Promise<PlayerScoreDto[]> {
-    const allTimeKey = this.leaderboardCache.getAllTime();
-    const playerScores: PlayerScoreDto[] = [];
+    const offset = (page - 1) * pageSize;
+    if (limit > 0 && offset >= limit) return [];
 
-    try {
-      const redisResult = await this.redis.zrevrange(
-        allTimeKey,
-        offset,
-        offset + limit - 1,
-        'WITHSCORES',
-      );
+    const remaining = limit > 0 ? limit - offset : undefined;
+    const take = limit > 0 ? Math.min(pageSize, remaining as number) : pageSize;
 
-      return redisResult.reduce((acc, curr, index) => {
-        if (index % 2 === 0)
-          acc.push(PlayerScoreDto.of(curr, redisResult[index + 1]));
-        return acc;
-      }, playerScores);
-    } catch (error) {
-      this.logger.error(`Error fetching leaderboard from Redis`, error);
-    }
+    return this.leaderboard
+      .createQueryBuilder('leaderboard')
+      .innerJoin('leaderboard.deltas', 'delta')
+      .select('delta.playerId', 'playerId')
+      .addSelect('SUM(delta.scoreDelta)', 'totalScore')
+      .where('leaderboard.id = :id', { id })
+      .groupBy('delta.playerId')
+      .orderBy('"totalScore"', 'DESC')
+      .skip(offset)
+      .take(take)
+      .getRawMany<PlayerScoreDto>();
+  }
 
-    try {
-      return this.deltas
-        .createQueryBuilder('delta')
-        .select('delta.userId', 'userId')
-        .addSelect('SUM(delta.delta)', 'totalScore')
-        .groupBy('delta.userId')
-        .orderBy('totalScore', 'DESC')
-        .limit(limit)
-        .offset(offset)
-        .getRawMany<PlayerScoreDto>();
-    } catch (error) {
-      this.logger.warn(`Failed to fetch from DB:`, error);
-    }
-
-    return [];
+  async getLeaderboard(
+    id: string,
+    limit: number,
+    page: number,
+    pageSize: number,
+  ): Promise<PlayerScoreDto[]> {
+    return this.getLeaderboardFromPostgres(id, limit, page, pageSize);
   }
 
   async getPlayerPosition(
