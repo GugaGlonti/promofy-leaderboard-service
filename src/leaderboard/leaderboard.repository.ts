@@ -215,10 +215,10 @@ export class LeaderboardRepository {
 
   async getAllLeaderboards(): Promise<AllLeaderboardsDto> {
     const leaderboards = await this.leaderboard.find();
-    return AllLeaderboardsDto.ofUUIDs(
-      (await this.leaderboardCache.getAllTimeLeaderboard()).id,
-      leaderboards.filter((lb) => lb.type === 'weekly').map((lb) => lb.id),
-      leaderboards.filter((lb) => lb.type === 'daily').map((lb) => lb.id),
+    return AllLeaderboardsDto.ofLeaderboards(
+      await this.leaderboardCache.getAllTimeLeaderboard(),
+      leaderboards.filter((lb) => lb.type === 'weekly'),
+      leaderboards.filter((lb) => lb.type === 'daily'),
     );
   }
 }
