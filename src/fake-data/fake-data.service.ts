@@ -1,17 +1,18 @@
 import {
-  Injectable,
   Inject,
-  OnModuleInit,
+  Injectable,
   Logger,
   OnModuleDestroy,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
-import { ScoreUpdateEvent } from '../common/event/score-update.event';
-import { NewPlayerEvent } from '../common/event/new-player.event';
 import { KafkaEvent } from '../common/event/KafkaEvent';
-import { FakeUser } from './dto/FakeUser.type';
-import { fakeDataConfig } from './fake-data.config';
+import { NewPlayerEvent } from '../common/event/new-player.event';
+import { ScoreUpdateEvent } from '../common/event/score-update.event';
 import type { FakeDataConfig } from './fake-data.config';
+import { fakeDataConfig } from './fake-data.config';
+
+type FakeUser = { ID: number; score: number };
 
 @Injectable()
 export class FakeDataService implements OnModuleInit, OnModuleDestroy {

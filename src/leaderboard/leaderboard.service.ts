@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { LeaderboardRepository } from './leaderboard.repository';
-import { PlayerScoreDto } from '../common/dto/PlayerScore.dto';
-import { PlayerPositionDto } from '../common/dto/PlayerPosition.dto';
-import { LeaderboardNotFoundException } from '../common/exception/LeaderboardNotFound.exception';
-import { AllLeaderboardsDto } from '../common/dto/AllLeaderboards.dto';
+import { PlayerScoreDto } from './dto/PlayerScore.dto';
+import { PlayerPositionDto } from './dto/PlayerPosition.dto';
+import { LeaderboardNotFoundException } from './exception/LeaderboardNotFound.exception';
+import { AllLeaderboardsDto } from './dto/AllLeaderboards.dto';
 
 @Injectable()
 export class LeaderboardService {
@@ -84,6 +84,12 @@ export class LeaderboardService {
   }
 
   async getAllLeaderboards(): Promise<AllLeaderboardsDto> {
-    return this.leaderboardRepository.getAllLeaderboards();
+    try {
+      return this.leaderboardRepository.getAllLeaderboards();
+    } catch (error) {
+      this.logger.error(`Error fetching all leaderboards:`, error);
+    }
+
+    throw new NotFoundException('No leaderboards found');
   }
 }

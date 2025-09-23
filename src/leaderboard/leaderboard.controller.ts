@@ -1,8 +1,8 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { LeaderboardService } from './leaderboard.service';
-import { PlayerScoreDto } from '../common/dto/PlayerScore.dto';
-import { PlayerPositionDto } from '../common/dto/PlayerPosition.dto';
-import { AllLeaderboardsDto } from '../common/dto/AllLeaderboards.dto';
+import { PlayerScoreDto } from './dto/PlayerScore.dto';
+import { PlayerPositionDto } from './dto/PlayerPosition.dto';
+import { AllLeaderboardsDto } from './dto/AllLeaderboards.dto';
 
 @Controller('leaderboards')
 export class LeaderboardController {

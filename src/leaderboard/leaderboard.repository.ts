@@ -2,12 +2,12 @@ import { Leaderboard } from './entity/leaderboard.entity';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PlayerPositionDto } from '../common/dto/PlayerPosition.dto';
-import { PlayerScoreDto } from '../common/dto/PlayerScore.dto';
 import { LeaderboardDelta } from './entity/leaderboard-delta.entity';
 import { LeaderboardCache } from './leaderboard-cache';
 import type { RedisClient } from './leaderboard.module';
-import { AllLeaderboardsDto } from '../common/dto/AllLeaderboards.dto';
+import { PlayerScoreDto } from './dto/PlayerScore.dto';
+import { PlayerPositionDto } from './dto/PlayerPosition.dto';
+import { AllLeaderboardsDto } from './dto/AllLeaderboards.dto';
 
 @Injectable()
 export class LeaderboardRepository {
