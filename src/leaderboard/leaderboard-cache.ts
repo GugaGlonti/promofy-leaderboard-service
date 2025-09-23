@@ -40,21 +40,18 @@ export class LeaderboardCache implements OnModuleInit {
     if (id == this.allTimeLeaderboard.id) return this.allTimeKey;
   }
 
-  getTodayLeaderboard(): Leaderboard {
-    if (!this.todayLeaderboard)
-      throw new Error("Today's leaderboard not initialized");
+  async getTodayLeaderboard(): Promise<Leaderboard> {
+    if (!this.todayLeaderboard) await this.resetToday();
     return this.todayLeaderboard;
   }
 
-  getThisWeekLeaderboard(): Leaderboard {
-    if (!this.thisWeekLeaderboard)
-      throw new Error("This week's leaderboard not initialized");
+  async getThisWeekLeaderboard(): Promise<Leaderboard> {
+    if (!this.thisWeekLeaderboard) await this.resetThisWeekKey();
     return this.thisWeekLeaderboard;
   }
 
-  getAllTimeLeaderboard(): Leaderboard {
-    if (!this.allTimeLeaderboard)
-      throw new Error('All-time leaderboard not initialized');
+  async getAllTimeLeaderboard(): Promise<Leaderboard> {
+    if (!this.allTimeLeaderboard) await this.resetAllTimeKey();
     return this.allTimeLeaderboard;
   }
 

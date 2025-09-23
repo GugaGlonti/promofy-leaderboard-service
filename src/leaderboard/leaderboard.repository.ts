@@ -192,9 +192,9 @@ export class LeaderboardRepository {
       scoreDelta,
       createdAt: new Date(),
       leaderboards: [
-        this.leaderboardCache.getTodayLeaderboard(),
-        this.leaderboardCache.getThisWeekLeaderboard(),
-        this.leaderboardCache.getAllTimeLeaderboard(),
+        await this.leaderboardCache.getTodayLeaderboard(),
+        await this.leaderboardCache.getThisWeekLeaderboard(),
+        await this.leaderboardCache.getAllTimeLeaderboard(),
       ],
     });
   }
@@ -216,7 +216,7 @@ export class LeaderboardRepository {
   async getAllLeaderboards(): Promise<AllLeaderboardsDto> {
     const leaderboards = await this.leaderboard.find();
     return AllLeaderboardsDto.ofUUIDs(
-      this.leaderboardCache.getAllTimeLeaderboard().id,
+      (await this.leaderboardCache.getAllTimeLeaderboard()).id,
       leaderboards.filter((lb) => lb.type === 'weekly').map((lb) => lb.id),
       leaderboards.filter((lb) => lb.type === 'daily').map((lb) => lb.id),
     );
