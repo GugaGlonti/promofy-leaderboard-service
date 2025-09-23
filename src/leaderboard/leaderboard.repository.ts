@@ -1,10 +1,10 @@
-import { Leaderboard } from './../common/entity/leaderboard.entity';
+import { Leaderboard } from './entity/leaderboard.entity';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PlayerPositionDto } from '../common/dto/PlayerPosition.dto';
 import { PlayerScoreDto } from '../common/dto/PlayerScore.dto';
-import { LeaderboardDelta } from '../common/entity/leaderboard-delta.entity';
+import { LeaderboardDelta } from './entity/leaderboard-delta.entity';
 import { LeaderboardCache } from './leaderboard-cache';
 import type { RedisClient } from './leaderboard.module';
 import { AllLeaderboardsDto } from '../common/dto/AllLeaderboards.dto';

@@ -4,10 +4,10 @@ import { LeaderboardService } from './leaderboard.service';
 import { LeaderboardRepository } from './leaderboard.repository';
 import Redis from 'ioredis';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { LeaderboardDelta } from '../common/entity/leaderboard-delta.entity';
+import { LeaderboardDelta } from './entity/leaderboard-delta.entity';
 import { LeaderboardCache } from './leaderboard-cache';
 import { LeaderboardController } from './leaderboard.controller';
-import { Leaderboard } from '../common/entity/leaderboard.entity';
+import { Leaderboard } from './entity/leaderboard.entity';
 
 export type RedisClient = Redis;
 

@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { Leaderboard } from '../common/entity/leaderboard.entity';
+import { Leaderboard } from './entity/leaderboard.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RedisKey } from 'ioredis';
