@@ -1,10 +1,12 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { ResponseInterceptor } from './interceptor/Response.interceptor';
+import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
 import { LeaderboardService } from './leaderboard.service';
 import { PlayerScoreDto } from './dto/PlayerScore.dto';
 import { PlayerPositionDto } from './dto/PlayerPosition.dto';
 import { AllLeaderboardsDto } from './dto/AllLeaderboards.dto';
 
 @Controller('leaderboards')
+@UseInterceptors(ResponseInterceptor)
 export class LeaderboardController {
   constructor(private readonly leaderboardService: LeaderboardService) {}
 
