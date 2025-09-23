@@ -22,16 +22,17 @@ export class LeaderboardService {
     this.logger.debug(`Fetching leaderboard for id: ${id}`);
 
     try {
-      const { success, data } =
-        await this.leaderboardRepository.getLeaderboardFromRedis(
-          id,
-          startDate,
-          endDate,
-          limit,
-          page,
-          pageSize,
-        );
-      if (success) return data;
+      if (!startDate && !endDate) {
+        // Only use Redis cache for unfiltered requests
+        const { success, data } =
+          await this.leaderboardRepository.getLeaderboardFromRedis(
+            id,
+            limit,
+            page,
+            pageSize,
+          );
+        if (success) return data;
+      }
     } catch (error) {
       this.logger.error(`Error fetching leaderboard from Redis:`, error);
     }
