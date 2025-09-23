@@ -71,8 +71,6 @@ export class LeaderboardRepository {
 
   async getLeaderboardFromRedis(
     id: string,
-    startDate: string, // TODO: think of something
-    endDate: string, // TODO: think of something
     limit: number,
     page: number,
     pageSize: number,
