@@ -29,11 +29,11 @@ export class LeaderboardController {
 
   @Get(':id/players/:userId')
   getPlayerRank(
-    //@Param('id') id: string,
+    @Param('id') id: string,
     @Param('userId') userId: string,
     @Query('contextSize') contextSize = 5,
   ): Promise<PlayerPositionDto> {
-    return this.leaderboardService.getPlayerPosition(userId, contextSize);
+    return this.leaderboardService.getPlayerPosition(id, userId, contextSize);
   }
 
   @Get(':id/export')
