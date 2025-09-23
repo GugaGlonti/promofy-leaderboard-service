@@ -12,21 +12,21 @@ export class LeaderboardService {
   constructor(private readonly leaderboardRepository: LeaderboardRepository) {}
 
   async getLeaderboard(
-    id: string,
+    leaderboardId: string,
     startDate: string,
     endDate: string,
     limit: number,
     page: number,
     pageSize: number,
   ): Promise<PlayerScoreDto[]> {
-    this.logger.debug(`Fetching leaderboard for id: ${id}`);
+    this.logger.debug(`Fetching leaderboard for id: ${leaderboardId}`);
 
     try {
       if (!startDate && !endDate) {
         // Only use Redis cache for unfiltered requests
         const { success, data } =
           await this.leaderboardRepository.getLeaderboardFromRedis(
-            id,
+            leaderboardId,
             limit,
             page,
             pageSize,
@@ -39,7 +39,7 @@ export class LeaderboardService {
 
     try {
       return this.leaderboardRepository.getLeaderboardFromPostgres(
-        id,
+        leaderboardId,
         startDate,
         endDate,
         limit,
@@ -50,17 +50,37 @@ export class LeaderboardService {
       this.logger.error(`Error fetching leaderboard from Postgres:`, error);
     }
 
-    throw new LeaderboardNotFoundException(id);
+    throw new LeaderboardNotFoundException(leaderboardId);
   }
 
-  getPlayerPosition(
+  async getPlayerPosition(
+    leaderboardId: string,
     userId: string,
     contextSize: number,
   ): Promise<PlayerPositionDto> {
-    return this.leaderboardRepository.getPlayerPositionFromRedis(
-      userId,
-      contextSize,
-    );
+    try {
+      const { success, data } =
+        await this.leaderboardRepository.getPlayerPositionFromRedis(
+          leaderboardId,
+          userId,
+          contextSize,
+        );
+      if (success) return data;
+    } catch (error) {
+      this.logger.error(`Error fetching player position from Redis:`, error);
+    }
+
+    try {
+      return this.leaderboardRepository.getPlayerPositionFromPostgres(
+        leaderboardId,
+        userId,
+        contextSize,
+      );
+    } catch (error) {
+      this.logger.error(`Error fetching player position from Postgres:`, error);
+    }
+
+    throw new LeaderboardNotFoundException(leaderboardId);
   }
 
   async getAllLeaderboards(): Promise<AllLeaderboardsDto> {
