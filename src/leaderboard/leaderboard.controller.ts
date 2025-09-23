@@ -40,9 +40,9 @@ export class LeaderboardController {
   getPlayerRank(
     @Param('id') id: string,
     @Param('userId') userId: string,
-    @Query('contextSize') contextSize = 5,
+    @Query('contextRadius') contextRadius = 5,
   ): Promise<PlayerPositionDto> {
-    return this.leaderboardService.getPlayerPosition(id, userId, contextSize);
+    return this.leaderboardService.getPlayerPosition(id, userId, contextRadius);
   }
 
   @Get(':id/export')

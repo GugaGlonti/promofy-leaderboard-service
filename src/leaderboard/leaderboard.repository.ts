@@ -105,7 +105,7 @@ export class LeaderboardRepository {
   async getPlayerPositionFromRedis(
     leaderboardId: string,
     userId: string,
-    contextSize: number,
+    contextRadius: number,
   ): Promise<{ success: boolean; data: PlayerPositionDto }> {
     const leaderboardKey = this.leaderboardCache.getKey(leaderboardId);
     if (!leaderboardKey)
@@ -115,8 +115,8 @@ export class LeaderboardRepository {
     if (!playerPosition)
       return { success: false, data: PlayerPositionDto.empty() };
 
-    const start = Math.max(playerPosition - contextSize, 0);
-    const end = playerPosition + contextSize;
+    const start = Math.max(playerPosition - contextRadius, 0);
+    const end = playerPosition + contextRadius;
 
     const context = await this.redis.zrevrange(
       leaderboardKey,
@@ -139,7 +139,7 @@ export class LeaderboardRepository {
       data: new PlayerPositionDto(
         playerPosition + 1,
         playerScore,
-        contextSize,
+        contextRadius,
         before,
         after,
       ),
@@ -149,7 +149,7 @@ export class LeaderboardRepository {
   async getPlayerPositionFromPostgres(
     leaderboardId: string,
     userId: string,
-    contextSize: number,
+    contextRadius: number,
   ): Promise<PlayerPositionDto> {
     return this.leaderboard
       .createQueryBuilder('leaderboard')
@@ -168,18 +168,18 @@ export class LeaderboardRepository {
 
         const playerScore = scores[playerIndex].getScore();
         const before = scores.slice(
-          Math.max(0, playerIndex - contextSize),
+          Math.max(0, playerIndex - contextRadius),
           playerIndex,
         );
         const after = scores.slice(
           playerIndex + 1,
-          playerIndex + 1 + contextSize,
+          playerIndex + 1 + contextRadius,
         );
 
         return new PlayerPositionDto(
           playerIndex + 1,
           playerScore,
-          contextSize,
+          contextRadius,
           before,
           after,
         );

@@ -70,7 +70,7 @@ export class LeaderboardService {
   async getPlayerPosition(
     leaderboardId: string,
     userId: string,
-    contextSize: number,
+    contextRadius: number,
   ): Promise<PlayerPositionDto> {
     this.logger.debug(`Fetching player position for user: ${userId}`);
 
@@ -82,7 +82,7 @@ export class LeaderboardService {
         await this.leaderboardRepository.getPlayerPositionFromRedis(
           leaderboardId,
           userId,
-          contextSize,
+          contextRadius,
         );
       if (success) return data;
       this.logger.debug(
@@ -99,7 +99,7 @@ export class LeaderboardService {
       return this.leaderboardRepository.getPlayerPositionFromPostgres(
         leaderboardId,
         userId,
-        contextSize,
+        contextRadius,
       );
     } catch (error) {
       this.logger.error(`Error fetching player position from Postgres:`, error);
