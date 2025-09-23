@@ -4,6 +4,7 @@ import { LeaderboardService } from './leaderboard.service';
 import { PlayerScoreDto } from './dto/PlayerScore.dto';
 import { PlayerPositionDto } from './dto/PlayerPosition.dto';
 import { AllLeaderboardsDto } from './dto/AllLeaderboards.dto';
+import { DateTimeLimit } from './enum/DateTimeLimit.enum';
 
 @Controller('leaderboards')
 @UseInterceptors(ResponseInterceptor)
@@ -12,9 +13,9 @@ export class LeaderboardController {
 
   @Get(':id')
   async getLeaderboard(
-    @Param('id') id: string = 'global',
-    @Query('startDate') startDate = '1970-01-01T00:00:00',
-    @Query('endDate') endDate = '9999-12-31T23:59:59',
+    @Param('id') id: string,
+    @Query('startDate') startDate = DateTimeLimit.MIN_DATE,
+    @Query('endDate') endDate = DateTimeLimit.MAX_DATE,
     @Query('limit') limit = 50,
     @Query('page') page = 1,
     @Query('pageSize') pageSize = 50,

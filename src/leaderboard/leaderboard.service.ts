@@ -4,6 +4,7 @@ import { PlayerScoreDto } from './dto/PlayerScore.dto';
 import { PlayerPositionDto } from './dto/PlayerPosition.dto';
 import { LeaderboardNotFoundException } from './exception/LeaderboardNotFound.exception';
 import { AllLeaderboardsDto } from './dto/AllLeaderboards.dto';
+import { DateTimeLimit } from './enum/DateTimeLimit.enum';
 
 @Injectable()
 export class LeaderboardService {
@@ -22,8 +23,17 @@ export class LeaderboardService {
     this.logger.debug(`Fetching leaderboard for id: ${leaderboardId}`);
 
     try {
-      if (!startDate && !endDate) {
-        // Only use Redis cache for unfiltered requests
+      this.logger.debug(
+        `Checking Redis cache for leaderboard: ${leaderboardId}`,
+      );
+      if (
+        startDate !== DateTimeLimit.MIN_DATE.toString() ||
+        endDate !== DateTimeLimit.MAX_DATE.toString()
+      ) {
+        this.logger.debug(
+          `Date filters applied (startDate: ${startDate}, endDate: ${endDate}), skipping Redis cache.`,
+        );
+      } else {
         const { success, data } =
           await this.leaderboardRepository.getLeaderboardFromRedis(
             leaderboardId,
@@ -32,12 +42,16 @@ export class LeaderboardService {
             pageSize,
           );
         if (success) return data;
+        this.logger.debug(
+          `Unable to fetch from Redis, falling back to Postgres.`,
+        );
       }
     } catch (error) {
       this.logger.error(`Error fetching leaderboard from Redis:`, error);
     }
 
     try {
+      this.logger.debug(`Fetching leaderboard from Postgres: ${leaderboardId}`);
       return this.leaderboardRepository.getLeaderboardFromPostgres(
         leaderboardId,
         startDate,
@@ -58,7 +72,12 @@ export class LeaderboardService {
     userId: string,
     contextSize: number,
   ): Promise<PlayerPositionDto> {
+    this.logger.debug(`Fetching player position for user: ${userId}`);
+
     try {
+      this.logger.debug(
+        `Checking Redis cache for player position in leaderboard: ${leaderboardId}`,
+      );
       const { success, data } =
         await this.leaderboardRepository.getPlayerPositionFromRedis(
           leaderboardId,
@@ -66,11 +85,17 @@ export class LeaderboardService {
           contextSize,
         );
       if (success) return data;
+      this.logger.debug(
+        `Unable to fetch from Redis, falling back to Postgres.`,
+      );
     } catch (error) {
       this.logger.error(`Error fetching player position from Redis:`, error);
     }
 
     try {
+      this.logger.debug(
+        `Fetching player position from Postgres: ${leaderboardId}`,
+      );
       return this.leaderboardRepository.getPlayerPositionFromPostgres(
         leaderboardId,
         userId,
@@ -84,6 +109,8 @@ export class LeaderboardService {
   }
 
   async getAllLeaderboards(): Promise<AllLeaderboardsDto> {
+    this.logger.debug(`Fetching all leaderboards`);
+
     try {
       return this.leaderboardRepository.getAllLeaderboards();
     } catch (error) {
