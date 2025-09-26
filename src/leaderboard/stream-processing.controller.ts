@@ -3,7 +3,7 @@ import { MessagePattern } from '@nestjs/microservices/decorators/message-pattern
 import { ScoreUpdateEvent } from '../common/event/score-update.event';
 import { NewPlayerEvent } from '../common/event/new-player.event';
 import { KafkaPayload } from './decorators/KafkaPayload.decorator';
-import { KafkaEvent } from '../common/event/KafkaEvent';
+import { KafkaEvent } from '../common/event/kafka-event';
 import { StreamProcessingService } from './stream-processing.service';
 
 @Controller('stream-processing')
