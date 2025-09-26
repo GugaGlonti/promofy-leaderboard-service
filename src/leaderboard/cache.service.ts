@@ -99,6 +99,7 @@ export class CacheService implements OnModuleInit {
     for (let i = 0; i < range.length; i += 2) {
       scores.push(LeaderboardEntry.of(range[i], range[i + 1]));
     }
+    if (scores.length === 0) return undefined;
     return scores;
   }
 

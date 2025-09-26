@@ -11,6 +11,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { LeaderboardSyncService } from './leaderboard-sync.service';
 import { UTCUtils } from './utc-utils';
 import { Leaderboard } from './entity/leaderboard.entity';
+import { PlayerRankNotFoundException } from './exception/PlayerRankNotFound.exception';
 
 @Injectable()
 export class LeaderboardService {
@@ -77,8 +78,16 @@ export class LeaderboardService {
   ): Promise<PlayerRankDto> {
     this.logger.debug(`Fetching player position for user: ${userId}`);
 
-    const playerRank = await this.cache.getRank(id, userId);
-    if (!playerRank) throw new LeaderboardNotFoundException(id, 'cache');
+    let playerRank = await this.cache.getRank(id, userId);
+    if (!playerRank) {
+      const leaderboard = await this.leaderboards.get(id);
+      if (!leaderboard) throw new LeaderboardNotFoundException(id, 'database');
+
+      await this.cache.set(id, leaderboard);
+      playerRank = await this.cache.getRank(id, userId);
+
+      if (!playerRank) throw new PlayerRankNotFoundException(id, userId);
+    }
 
     const start = Math.max(playerRank - contextRadius, 0);
     const end = playerRank + contextRadius;
