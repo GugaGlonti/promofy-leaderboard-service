@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsString, IsOptional, IsInt, Min } from 'class-validator';
-import { DateTimeLimit } from '../enum/DateTimeLimit.enum';
+import { DateTimeLimit } from '../enum/date-time-limit.enum';
 
 export class GetLeaderboardOptions {
   @IsOptional()
@@ -28,4 +28,7 @@ export class GetLeaderboardOptions {
   @IsInt()
   @Min(1)
   pageSize: number = 50;
+
+  @IsOptional()
+  skipRedis?: boolean = false;
 }

@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext, Logger } from '@nestjs/common';
 import { KafkaContext } from '@nestjs/microservices';
-import { KafkaEvent } from '../../common/event/KafkaEvent';
+import { KafkaEvent } from '../../common/event/kafka-event';
 
 const logger = new Logger('KafkaPayloadDecorator');
 
