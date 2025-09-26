@@ -1,7 +1,7 @@
-import { NotFoundException } from '@nestjs/common';
+import { InternalServerErrorException } from '@nestjs/common';
 
-export class LeaderboardNotFoundException extends NotFoundException {
-  constructor(id: string) {
-    super(`Leaderboard or data for id "${id}" not found in cache or database`);
+export class LeaderboardNotFoundException extends InternalServerErrorException {
+  constructor(id: string, source: string) {
+    super(`Leaderboard or data for id "${id}" not found in ${source}`);
   }
 }
