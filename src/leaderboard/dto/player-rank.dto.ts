@@ -18,7 +18,7 @@ export class PlayerRankDto {
     scores: LeaderboardEntry[],
   ): PlayerRankDto {
     const player = scores.findIndex((p) => p.userId === Number(userId));
-    const playerScore = scores[player].totalScore;
+    const playerScore = scores[player].score;
     const before = scores.slice(0, player);
     const after = scores.slice(player + 1);
 

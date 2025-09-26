@@ -119,10 +119,8 @@ export class CacheService implements OnModuleInit {
       throw new CacheException('Cannot cache empty leaderboard');
     }
 
-    const entries = leaderboard.flatMap(({ userId, totalScore }) => {
-      const score = Number(totalScore);
-      return [score, userId];
-    });
+    const entries: number[] = [];
+    for (const { score, userId } of leaderboard) entries.push(score, userId);
 
     if (entries.length === 0) {
       this.logger.warn(`No valid entries to cache for leaderboard ${key}`);

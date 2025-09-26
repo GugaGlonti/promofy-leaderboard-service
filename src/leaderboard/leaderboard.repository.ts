@@ -35,8 +35,8 @@ export class LeaderboardRepository {
 
     const sql = `
       SELECT
-          d."PLAYER_ID" AS "playerId",
-          SUM(d."SCORE_DELTA") AS "totalScore"
+          d."PLAYER_ID" AS "userId",
+          SUM(d."SCORE_DELTA") AS "score"
       
       FROM "LEADERBOARDS" l
       INNER JOIN "LEADERBOARD_DELTA_MAPPING" ldm
@@ -46,10 +46,10 @@ export class LeaderboardRepository {
 
       WHERE l."ID" = $1
       GROUP BY d."PLAYER_ID"
-      ORDER BY "totalScore" DESC
+      ORDER BY "score" DESC
     `;
 
-    return this.leaderboard.query(sql, [id]);
+    return this.leaderboard.query<LeaderboardEntry[]>(sql, [id]);
   }
 
   async getWithOptions(
@@ -76,8 +76,8 @@ export class LeaderboardRepository {
 
     const sql = `
       SELECT
-          d."PLAYER_ID" AS "playerId",
-          SUM(d."SCORE_DELTA") AS "totalScore"
+          d."PLAYER_ID" AS "userId",
+          SUM(d."SCORE_DELTA") AS "score"
       
       FROM "LEADERBOARDS" l
       INNER JOIN "LEADERBOARD_DELTA_MAPPING" ldm
@@ -88,10 +88,10 @@ export class LeaderboardRepository {
       WHERE l."ID" = $1
         ${dateFilter}
       GROUP BY d."PLAYER_ID"
-      ORDER BY "totalScore" DESC
+      ORDER BY "score" DESC
       LIMIT $${params.length - 1} OFFSET $${params.length}
     `;
 
-    return this.leaderboard.query(sql, params);
+    return this.leaderboard.query<LeaderboardEntry[]>(sql, params);
   }
 }

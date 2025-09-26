@@ -1,7 +1,7 @@
 export class LeaderboardEntry {
   constructor(
     public readonly userId: number,
-    public readonly totalScore: number,
+    public readonly score: number,
   ) {}
 
   static of(userId: string, totalScore: string): LeaderboardEntry;
