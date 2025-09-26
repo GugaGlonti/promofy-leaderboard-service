@@ -133,9 +133,9 @@ export class LeaderboardService {
     this.leaderboardSync.clearCurrentLeaderboards();
     for (const lb of leaderboards) {
       if (UTCUtils.todayIsInRange(lb.startDate, lb.endDate)) {
-        this.leaderboardSync.addToCurrent(lb);
+        this.leaderboardSync.addToActive(lb);
       } else {
-        this.leaderboardSync.addToPrevious(lb);
+        this.leaderboardSync.addToInactive(lb);
       }
     }
     const status = this.leaderboardSync.getStatus();
