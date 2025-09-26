@@ -29,7 +29,7 @@ export class LeaderboardStatusDto {
 
 function leaderboardToDisplay(lb: Leaderboard): DisplayLeaderboard {
   const { id, type, startDate, endDate } = lb;
-  const dateRange = `${startDate} - ${endDate}`;
+  const dateRange = `${startDate.toString()} - ${endDate.toString()}`;
   return {
     id,
     type,
