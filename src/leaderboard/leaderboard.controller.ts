@@ -1,4 +1,3 @@
-import { ResponseInterceptor } from './interceptor/Response.interceptor';
 import {
   Controller,
   Get,
@@ -8,11 +7,12 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { GetLeaderboardOptions } from './dto/get-leaderboard-options.dto';
+import { LeaderboardEntry } from './dto/leaderboard-entry.dto';
+import { LeaderboardStatusDto } from './dto/leaderboard-status.dto';
+import { PlayerRankDto } from './dto/player-rank.dto';
+import { ResponseInterceptor } from './interceptor/Response.interceptor';
 import { LeaderboardService } from './leaderboard.service';
-import { PlayerScoreDto } from './dto/PlayerScore.dto';
-import { PlayerPositionDto } from './dto/PlayerPosition.dto';
-import { AllLeaderboardsDto } from './dto/AllLeaderboards.dto';
-import { GetLeaderboardOptions } from './dto/GetLeaderboardOptions.dto';
 
 @Controller('leaderboards')
 @UseInterceptors(ResponseInterceptor)
@@ -24,16 +24,8 @@ export class LeaderboardController {
   async getLeaderboard(
     @Param('id') id: string,
     @Query() options: GetLeaderboardOptions,
-  ): Promise<PlayerScoreDto[]> {
-    const { startDate, endDate, limit, page, pageSize } = options;
-    return this.leaderboardService.getLeaderboard(
-      id,
-      startDate,
-      endDate,
-      limit,
-      page,
-      pageSize,
-    );
+  ): Promise<LeaderboardEntry[]> {
+    return this.leaderboardService.getLeaderboard(id, options);
   }
 
   @Get(':id/players/:userId')
@@ -41,7 +33,7 @@ export class LeaderboardController {
     @Param('id') id: string,
     @Param('userId') userId: string,
     @Query('contextRadius') contextRadius = 5,
-  ): Promise<PlayerPositionDto> {
+  ): Promise<PlayerRankDto> {
     return this.leaderboardService.getPlayerPosition(id, userId, contextRadius);
   }
 
@@ -51,7 +43,7 @@ export class LeaderboardController {
   }
 
   @Get()
-  async getAllLeaderboards(): Promise<AllLeaderboardsDto> {
+  getAllLeaderboards(): LeaderboardStatusDto {
     return this.leaderboardService.getAllLeaderboards();
   }
 }

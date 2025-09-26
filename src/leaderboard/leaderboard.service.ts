@@ -1,122 +1,150 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { LeaderboardRepository } from './leaderboard.repository';
-import { PlayerScoreDto } from './dto/PlayerScore.dto';
-import { PlayerPositionDto } from './dto/PlayerPosition.dto';
+import { Injectable, Logger } from '@nestjs/common';
+
+import { LeaderboardEntry } from './dto/leaderboard-entry.dto';
+import { PlayerRankDto } from './dto/player-rank.dto';
 import { LeaderboardNotFoundException } from './exception/LeaderboardNotFound.exception';
-import { AllLeaderboardsDto } from './dto/AllLeaderboards.dto';
-import { DateTimeLimit } from './enum/DateTimeLimit.enum';
+import { CacheService } from './cache.service';
+import { GetLeaderboardOptions } from './dto/get-leaderboard-options.dto';
+import { LeaderboardRepository } from './leaderboard.repository';
+import { LeaderboardStatusDto } from './dto/leaderboard-status.dto';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { LeaderboardSyncService } from './leaderboard-sync.service';
+import { UTCUtils } from './utc-utils';
+import { Leaderboard } from './entity/leaderboard.entity';
 
 @Injectable()
 export class LeaderboardService {
   private readonly logger = new Logger(LeaderboardService.name);
 
-  constructor(private readonly leaderboardRepository: LeaderboardRepository) {}
+  constructor(
+    private readonly leaderboards: LeaderboardRepository,
+    private readonly cache: CacheService,
+    private readonly leaderboardSync: LeaderboardSyncService,
+  ) {}
 
+  /**
+   * Fetches a leaderboard by its ID, with optional filtering and pagination.
+   * @param id The ID of the leaderboard to fetch.
+   * @param options Options for filtering and pagination.
+   * @returns The leaderboard entries.
+   */
   async getLeaderboard(
-    leaderboardId: string,
-    startDate: string,
-    endDate: string,
-    limit: number,
-    page: number,
-    pageSize: number,
-  ): Promise<PlayerScoreDto[]> {
-    this.logger.debug(`Fetching leaderboard for id: ${leaderboardId}`);
+    id: string,
+    {
+      startDate,
+      endDate,
+      limit,
+      page,
+      pageSize,
+      skipRedis,
+    }: GetLeaderboardOptions,
+  ): Promise<LeaderboardEntry[]> {
+    this.logger.debug(`Fetching leaderboard for id: ${id}`);
+    const isCachable = !UTCUtils.hasDateFilter(startDate, endDate);
 
-    try {
-      this.logger.debug(
-        `Checking Redis cache for leaderboard: ${leaderboardId}`,
-      );
-      if (
-        startDate !== DateTimeLimit.MIN_DATE.toString() ||
-        endDate !== DateTimeLimit.MAX_DATE.toString()
-      ) {
-        this.logger.debug(
-          `Date filters applied (startDate: ${startDate}, endDate: ${endDate}), skipping Redis cache.`,
-        );
-      } else {
-        const { success, data } =
-          await this.leaderboardRepository.getLeaderboardFromRedis(
-            leaderboardId,
-            limit,
-            page,
-            pageSize,
-          );
-        if (success) return data;
-        this.logger.debug(
-          `Unable to fetch from Redis, falling back to Postgres.`,
-        );
-      }
-    } catch (error) {
-      this.logger.error(`Error fetching leaderboard from Redis:`, error);
+    if (!isCachable || skipRedis) {
+      const options = { startDate, endDate, limit, page, pageSize };
+      return this.leaderboards.getWithOptions(id, options);
     }
 
-    try {
-      this.logger.debug(`Fetching leaderboard from Postgres: ${leaderboardId}`);
-      return this.leaderboardRepository.getLeaderboardFromPostgres(
-        leaderboardId,
-        startDate,
-        endDate,
-        limit,
-        page,
-        pageSize,
-      );
-    } catch (error) {
-      this.logger.error(`Error fetching leaderboard from Postgres:`, error);
-    }
+    const options = { limit, page, pageSize };
+    const cachedLeaderboard = await this.cache.get(id, options);
+    if (cachedLeaderboard) return cachedLeaderboard;
 
-    throw new LeaderboardNotFoundException(leaderboardId);
+    const leaderboard = await this.leaderboards.get(id);
+    if (!leaderboard) throw new LeaderboardNotFoundException(id, 'database');
+
+    await this.cache.set(id, leaderboard);
+
+    const reCachedLeaderboard = await this.cache.get(id, options);
+    if (!reCachedLeaderboard)
+      throw new LeaderboardNotFoundException(id, 'cache');
+
+    return reCachedLeaderboard;
   }
 
+  /**
+   * Fetches the position of a player in a leaderboard, along with surrounding context.
+   * @param id The ID of the leaderboard.
+   * @param userId The ID of the player.
+   * @param contextRadius The number of entries to include before and after the player's position.
+   * @returns The player's position and surrounding context.
+   */
   async getPlayerPosition(
-    leaderboardId: string,
+    id: string,
     userId: string,
     contextRadius: number,
-  ): Promise<PlayerPositionDto> {
+  ): Promise<PlayerRankDto> {
     this.logger.debug(`Fetching player position for user: ${userId}`);
 
-    try {
-      this.logger.debug(
-        `Checking Redis cache for player position in leaderboard: ${leaderboardId}`,
-      );
-      const { success, data } =
-        await this.leaderboardRepository.getPlayerPositionFromRedis(
-          leaderboardId,
-          userId,
-          contextRadius,
-        );
-      if (success) return data;
-      this.logger.debug(
-        `Unable to fetch from Redis, falling back to Postgres.`,
-      );
-    } catch (error) {
-      this.logger.error(`Error fetching player position from Redis:`, error);
-    }
+    const playerRank = await this.cache.getRank(id, userId);
+    if (!playerRank) throw new LeaderboardNotFoundException(id, 'cache');
+    const start = Math.max(playerRank - contextRadius, 0);
+    const end = playerRank + contextRadius;
 
-    try {
-      this.logger.debug(
-        `Fetching player position from Postgres: ${leaderboardId}`,
-      );
-      return this.leaderboardRepository.getPlayerPositionFromPostgres(
-        leaderboardId,
-        userId,
-        contextRadius,
-      );
-    } catch (error) {
-      this.logger.error(`Error fetching player position from Postgres:`, error);
+    let scores = await this.cache.getRange(id, start, end);
+    if (!scores) {
+      const leaderboard = await this.leaderboards.get(id);
+      if (!leaderboard) throw new LeaderboardNotFoundException(id, 'database');
+      await this.cache.set(id, leaderboard);
+      scores = await this.cache.getRange(id, start, end);
     }
+    if (!scores) throw new LeaderboardNotFoundException(id, 'cache');
 
-    throw new LeaderboardNotFoundException(leaderboardId);
+    return PlayerRankDto.ofScores(userId, playerRank + 1, scores);
   }
 
-  async getAllLeaderboards(): Promise<AllLeaderboardsDto> {
-    this.logger.debug(`Fetching all leaderboards`);
+  /**
+   * Fetches the status of all leaderboards, including cached IDs and current/previous/all-time leaderboards.
+   * @returns The status of all leaderboards.
+   */
+  getAllLeaderboards(): LeaderboardStatusDto {
+    return new LeaderboardStatusDto(
+      this.leaderboardSync.getCachedLeaderboardIDs(),
+      this.leaderboardSync.getCurrentLeaderboards(),
+      this.leaderboardSync.getPreviousLeaderboards(),
+      this.leaderboardSync.getAllTimeLeaderboards(),
+    );
+  }
 
-    try {
-      return this.leaderboardRepository.getAllLeaderboards();
-    } catch (error) {
-      this.logger.error(`Error fetching all leaderboards:`, error);
+  async onModuleInit() {
+    await this.createCurrentLeaderboards();
+    await this.refreshCurrentLeaderboards();
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT, { timeZone: 'UTC' })
+  async handleCron() {
+    await this.createCurrentLeaderboards();
+    await this.refreshCurrentLeaderboards();
+  }
+
+  private async createCurrentLeaderboards() {
+    const leaderboards: Partial<Leaderboard>[] = [
+      Leaderboard.DAILY(),
+      Leaderboard.WEEKLY(),
+      Leaderboard.MONTHLY(),
+      Leaderboard.ALL_TIME(),
+    ];
+    await this.leaderboards.insertOrIgnore(leaderboards);
+  }
+
+  private async refreshCurrentLeaderboards() {
+    this.logger.debug('Refreshing current leaderboard IDs');
+    const leaderboards = await this.leaderboards.findAll();
+
+    this.logger.debug(`Refreshed current leaderboards:`);
+    this.leaderboardSync.clearCurrentLeaderboards();
+    for (const lb of leaderboards) {
+      if (UTCUtils.todayIsInRange(lb.startDate, lb.endDate)) {
+        this.leaderboardSync.addToCurrent(lb);
+      } else {
+        this.leaderboardSync.addToPrevious(lb);
+      }
     }
-
-    throw new NotFoundException('No leaderboards found');
+    this.logger.debug(
+      `Synced leaderboards: ${this.leaderboardSync
+        .getSyncedLeaderboards()
+        .join(', ')}`,
+    );
   }
 }

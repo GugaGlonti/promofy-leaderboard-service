@@ -1,13 +1,17 @@
-import { ConfigService } from '@nestjs/config';
 import { Module, Provider } from '@nestjs/common';
-import { LeaderboardService } from './leaderboard.service';
-import { LeaderboardRepository } from './leaderboard.repository';
-import Redis from 'ioredis';
+import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import Redis from 'ioredis';
+import { CacheService } from './cache.service';
 import { LeaderboardDelta } from './entity/leaderboard-delta.entity';
-import { LeaderboardCache } from './leaderboard-cache';
-import { LeaderboardController } from './leaderboard.controller';
 import { Leaderboard } from './entity/leaderboard.entity';
+import { LeaderboardDeltaRepository } from './leaderboard-delta.repository';
+import { LeaderboardSyncService } from './leaderboard-sync.service';
+import { LeaderboardController } from './leaderboard.controller';
+import { LeaderboardRepository } from './leaderboard.repository';
+import { LeaderboardService } from './leaderboard.service';
+import { StreamProcessingController } from './stream-processing.controller';
+import { StreamProcessingService } from './stream-processing.service';
 
 export type RedisClient = Redis;
 
@@ -30,11 +34,13 @@ export const RedisProvider: Provider<RedisClient> = {
   imports: [TypeOrmModule.forFeature([LeaderboardDelta, Leaderboard])],
   providers: [
     LeaderboardService,
-    LeaderboardRepository,
     RedisProvider,
-    LeaderboardCache,
+    LeaderboardDeltaRepository,
+    LeaderboardRepository,
+    StreamProcessingService,
+    CacheService,
+    LeaderboardSyncService,
   ],
-  exports: [LeaderboardService, LeaderboardRepository],
-  controllers: [LeaderboardController],
+  controllers: [LeaderboardController, StreamProcessingController],
 })
 export class LeaderboardModule {}

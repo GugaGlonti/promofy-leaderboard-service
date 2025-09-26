@@ -6,7 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
-import { KafkaEvent } from '../common/event/KafkaEvent';
+import { KafkaEvent } from '../common/event/kafka-event';
 import { NewPlayerEvent } from '../common/event/new-player.event';
 import { ScoreUpdateEvent } from '../common/event/score-update.event';
 import type { FakeDataConfig } from './fake-data.config';
@@ -82,7 +82,6 @@ export class FakeDataService implements OnModuleInit, OnModuleDestroy {
       const event = new KafkaEvent(user.ID, scoreUpdateEvent);
 
       this.kafkaProducer.emit('score_update', event);
-      this.logger.debug(`Sent score update for ${user.ID}: +${scoreDelta}`);
     } catch (error) {
       this.logger.error('Error sending score update:', error);
     }

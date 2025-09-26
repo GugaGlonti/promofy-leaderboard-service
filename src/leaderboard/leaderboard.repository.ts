@@ -1,224 +1,97 @@
-import { Leaderboard } from './entity/leaderboard.entity';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LeaderboardDelta } from './entity/leaderboard-delta.entity';
-import { LeaderboardCache } from './leaderboard-cache';
-import type { RedisClient } from './leaderboard.module';
-import { PlayerScoreDto } from './dto/PlayerScore.dto';
-import { PlayerPositionDto } from './dto/PlayerPosition.dto';
-import { AllLeaderboardsDto } from './dto/AllLeaderboards.dto';
+import { GetLeaderboardOptions } from './dto/get-leaderboard-options.dto';
+import { LeaderboardEntry } from './dto/leaderboard-entry.dto';
+import { Leaderboard } from './entity/leaderboard.entity';
+import { DateTimeLimit } from './enum/date-time-limit.enum';
 
 @Injectable()
 export class LeaderboardRepository {
   private readonly logger = new Logger(LeaderboardRepository.name);
 
   constructor(
-    @InjectRepository(LeaderboardDelta)
-    private readonly deltas: Repository<LeaderboardDelta>,
-
     @InjectRepository(Leaderboard)
     private readonly leaderboard: Repository<Leaderboard>,
-
-    @Inject('REDIS_CLIENT')
-    private readonly redis: RedisClient,
-
-    private readonly leaderboardCache: LeaderboardCache,
   ) {}
 
-  async initializePlayer(userId: number, newScore: number): Promise<void> {
-    this.logger.debug(`Initializing player ${userId} with score ${newScore}`);
-    await this.addToDatabase(userId, newScore);
-    await this.addToRedis(userId, newScore);
+  async findAll(): Promise<Leaderboard[]> {
+    this.logger.debug('Fetching all leaderboards from the database');
+    return this.leaderboard.find();
   }
 
-  async updateScore(userId: number, scoreDelta: number): Promise<void> {
-    this.logger.debug(`Updating player ${userId} with delta ${scoreDelta}`);
-    await this.addToDatabase(userId, scoreDelta);
-    await this.addToRedis(userId, scoreDelta);
+  async insertOrIgnore(leaderboards: Partial<Leaderboard>[]) {
+    this.logger.debug('Creating default leaderboards if not exist');
+    await this.leaderboard
+      .createQueryBuilder()
+      .insert()
+      .values(leaderboards)
+      .orIgnore()
+      .execute();
   }
 
-  async getLeaderboardFromRedis(
-    leaderboardId: string,
-    limit: number,
-    page: number,
-    pageSize: number,
-  ): Promise<{
-    success: boolean;
-    data: PlayerScoreDto[];
-  }> {
-    const leaderboardKey = this.leaderboardCache.getKey(leaderboardId);
-    if (!leaderboardKey) return { success: false, data: [] };
+  async get(id: string): Promise<LeaderboardEntry[]> {
+    this.logger.debug(`Fetching leaderboard for id: ${id}`);
 
-    const start = (page - 1) * pageSize;
-    if (limit > 0 && start >= limit) return { success: false, data: [] };
+    const sql = `
+      SELECT
+          d."PLAYER_ID" AS "playerId",
+          SUM(d."SCORE_DELTA") AS "totalScore"
+      
+      FROM "LEADERBOARDS" l
+      INNER JOIN "LEADERBOARD_DELTA_MAPPING" ldm
+          ON ldm."LEADERBOARD_ID" = l."ID"
+      INNER JOIN "LEADERBOARD_DELTAS" d
+          ON d."ID" = ldm."DELTA_ID"
 
-    const end =
-      limit > 0
-        ? Math.min(start + pageSize - 1, limit - 1)
-        : start + pageSize - 1;
+      WHERE l."ID" = $1
+      GROUP BY d."PLAYER_ID"
+      ORDER BY "totalScore" DESC
+    `;
 
-    const entries = await this.redis.zrevrange(
-      leaderboardKey,
-      start,
-      end,
-      'WITHSCORES',
-    );
-
-    const data: PlayerScoreDto[] = [];
-    for (let i = 0; i < entries.length; i += 2)
-      data.push(PlayerScoreDto.of(entries[i], entries[i + 1]));
-    return { success: true, data };
+    return this.leaderboard.query(sql, [id]);
   }
 
-  async getLeaderboardFromPostgres(
-    leaderboardId: string,
-    startDate: string,
-    endDate: string,
-    limit: number,
-    page: number,
-    pageSize: number,
-  ): Promise<PlayerScoreDto[]> {
+  async getWithOptions(
+    id: string,
+    { startDate, endDate, limit, page, pageSize }: GetLeaderboardOptions,
+  ): Promise<LeaderboardEntry[]> {
+    this.logger.debug(`Fetching leaderboard for id: ${id} with options`);
+
     const offset = (page - 1) * pageSize;
     if (limit > 0 && offset >= limit) return [];
+    const take = limit > 0 ? Math.min(pageSize, limit - offset) : pageSize;
 
-    const remaining = limit > 0 ? limit - offset : undefined;
-    const take = limit > 0 ? Math.min(pageSize, remaining as number) : pageSize;
+    const params: any[] = [id];
+    let dateFilter = '';
 
-    return this.leaderboard
-      .createQueryBuilder('leaderboard')
-      .innerJoin('leaderboard.deltas', 'delta')
-      .select('delta.playerId', 'playerId')
-      .addSelect('SUM(delta.scoreDelta)', 'totalScore')
-      .where('leaderboard.id = :id', { id: leaderboardId })
-      .andWhere('delta.createdAt BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      })
-      .groupBy('delta.playerId')
-      .orderBy('"totalScore"', 'DESC')
-      .skip(offset)
-      .take(take)
-      .getRawMany<PlayerScoreDto>();
-  }
+    const minDate = DateTimeLimit.MIN_DATE?.toString();
+    const maxDate = DateTimeLimit.MAX_DATE?.toString();
+    if (startDate !== minDate || endDate !== maxDate) {
+      params.push(startDate, endDate);
+      dateFilter = `AND d."CREATED_AT" BETWEEN $2 AND $3`;
+    }
 
-  async getPlayerPositionFromRedis(
-    leaderboardId: string,
-    userId: string,
-    contextRadius: number,
-  ): Promise<{ success: boolean; data: PlayerPositionDto }> {
-    const leaderboardKey = this.leaderboardCache.getKey(leaderboardId);
-    if (!leaderboardKey)
-      return { success: false, data: PlayerPositionDto.empty() };
+    params.push(take, offset);
 
-    const playerPosition = await this.redis.zrevrank(leaderboardKey, userId);
-    if (!playerPosition)
-      return { success: false, data: PlayerPositionDto.empty() };
+    const sql = `
+      SELECT
+          d."PLAYER_ID" AS "playerId",
+          SUM(d."SCORE_DELTA") AS "totalScore"
+      
+      FROM "LEADERBOARDS" l
+      INNER JOIN "LEADERBOARD_DELTA_MAPPING" ldm
+          ON ldm."LEADERBOARD_ID" = l."ID"
+      INNER JOIN "LEADERBOARD_DELTAS" d
+          ON d."ID" = ldm."DELTA_ID"
+      
+      WHERE l."ID" = $1
+        ${dateFilter}
+      GROUP BY d."PLAYER_ID"
+      ORDER BY "totalScore" DESC
+      LIMIT $${params.length - 1} OFFSET $${params.length}
+    `;
 
-    const start = Math.max(playerPosition - contextRadius, 0);
-    const end = playerPosition + contextRadius;
-
-    const context = await this.redis.zrevrange(
-      leaderboardKey,
-      start,
-      end,
-      'WITHSCORES',
-    );
-
-    const scores: PlayerScoreDto[] = [];
-    for (let i = 0; i < context.length; i += 2)
-      scores.push(PlayerScoreDto.of(context[i], context[i + 1]));
-
-    const player = scores.findIndex((p) => p.getUserId() === Number(userId));
-    const playerScore = scores[player].getScore();
-    const before = scores.slice(0, player);
-    const after = scores.slice(player + 1);
-
-    return {
-      success: true,
-      data: new PlayerPositionDto(
-        playerPosition + 1,
-        playerScore,
-        contextRadius,
-        before,
-        after,
-      ),
-    };
-  }
-
-  async getPlayerPositionFromPostgres(
-    leaderboardId: string,
-    userId: string,
-    contextRadius: number,
-  ): Promise<PlayerPositionDto> {
-    return this.leaderboard
-      .createQueryBuilder('leaderboard')
-      .innerJoin('leaderboard.deltas', 'delta')
-      .select('delta.playerId', 'playerId')
-      .addSelect('SUM(delta.scoreDelta)', 'totalScore')
-      .where('leaderboard.id = :id', { id: leaderboardId })
-      .groupBy('delta.playerId')
-      .orderBy('"totalScore"', 'DESC')
-      .getRawMany<PlayerScoreDto>()
-      .then((scores) => {
-        const playerIndex = scores.findIndex(
-          (score) => score.getUserId() === Number(userId),
-        );
-        if (playerIndex === -1) return PlayerPositionDto.empty();
-
-        const playerScore = scores[playerIndex].getScore();
-        const before = scores.slice(
-          Math.max(0, playerIndex - contextRadius),
-          playerIndex,
-        );
-        const after = scores.slice(
-          playerIndex + 1,
-          playerIndex + 1 + contextRadius,
-        );
-
-        return new PlayerPositionDto(
-          playerIndex + 1,
-          playerScore,
-          contextRadius,
-          before,
-          after,
-        );
-      });
-  }
-
-  private async addToDatabase(playerId: number, scoreDelta: number) {
-    return this.deltas.save({
-      playerId,
-      scoreDelta,
-      createdAt: new Date(),
-      leaderboards: [
-        await this.leaderboardCache.getTodayLeaderboard(),
-        await this.leaderboardCache.getThisWeekLeaderboard(),
-        await this.leaderboardCache.getAllTimeLeaderboard(),
-      ],
-    });
-  }
-
-  private async addToRedis(
-    playerId: number,
-    scoreDelta: number,
-  ): Promise<void> {
-    await this.redis
-      .multi()
-      .zincrby(this.leaderboardCache.getTodayKey(), scoreDelta, playerId)
-      //.expire(dailyKey, this.leaderboardKeys.getTodayExpire())
-      .zincrby(this.leaderboardCache.getThisWeekKey(), scoreDelta, playerId)
-      //.expire(weeklyKey, this.leaderboardKeys.getThisWeekExpire())
-      .zincrby(this.leaderboardCache.getAllTime(), scoreDelta, playerId)
-      .exec();
-  }
-
-  async getAllLeaderboards(): Promise<AllLeaderboardsDto> {
-    const leaderboards = await this.leaderboard.find();
-    return AllLeaderboardsDto.ofLeaderboards(
-      await this.leaderboardCache.getAllTimeLeaderboard(),
-      leaderboards.filter((lb) => lb.type === 'weekly'),
-      leaderboards.filter((lb) => lb.type === 'daily'),
-    );
+    return this.leaderboard.query(sql, params);
   }
 }
