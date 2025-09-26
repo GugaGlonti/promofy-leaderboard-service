@@ -11,13 +11,17 @@ import { Leaderboard } from './entity/leaderboard.entity';
 
 export type RedisClient = Redis;
 
-const RedisProvider: Provider<RedisClient> = {
+export const RedisProvider: Provider<RedisClient> = {
   inject: [ConfigService],
   provide: 'REDIS_CLIENT',
-  useFactory: (configService: ConfigService): RedisClient => {
+  useFactory: (env: ConfigService): RedisClient => {
     return new Redis({
-      host: configService.getOrThrow<string>('REDIS_HOST'),
-      port: configService.getOrThrow<number>('REDIS_PORT'),
+      host: env.getOrThrow<string>('REDIS_HOST'),
+      port: env.getOrThrow<number>('REDIS_PORT'),
+      maxRetriesPerRequest: env.getOrThrow<number | null>('REDIS_MAX_RETRIES'),
+      enableOfflineQueue: env.getOrThrow<boolean>('REDIS_ENABLE_OFFLINE_QUEUE'),
+      autoResubscribe: env.getOrThrow<boolean>('REDIS_AUTO_RECONNECT'),
+      keepAlive: env.getOrThrow<number>('REDIS_KEEP_ALIVE'),
     });
   },
 };
