@@ -26,9 +26,9 @@ export class CacheService implements OnModuleInit {
     this.redis.on('error', (err) => this.logger.error(`Redis error: ${err}`));
     this.redis.on('end', () => this.logger.log('Redis connection closed'));
     this.redis.on('reconnecting', () => {
-      const msg = 'Redis connection lost, clearing all cached leaderboard IDs';
-      this.logger.warn(msg);
+      this.logger.warn('Redis connection lost, clearing all cached IDs');
       this.leaderboardSyncService.clearCachedLeaderboardIDs();
+      void this.syncLeaderboardIDs();
     });
   }
 

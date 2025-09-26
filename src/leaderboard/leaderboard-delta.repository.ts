@@ -23,7 +23,7 @@ export class LeaderboardDeltaRepository {
       .createQueryBuilder()
       .relation(LeaderboardDelta, 'leaderboards')
       .of(delta)
-      .add(this.leaderboardSync.getSyncedLeaderboards());
+      .add(this.leaderboardSync.getIncrementingLeaderboards());
 
     return delta;
   }

@@ -79,6 +79,7 @@ export class LeaderboardService {
 
     const playerRank = await this.cache.getRank(id, userId);
     if (!playerRank) throw new LeaderboardNotFoundException(id, 'cache');
+
     const start = Math.max(playerRank - contextRadius, 0);
     const end = playerRank + contextRadius;
 
@@ -86,6 +87,7 @@ export class LeaderboardService {
     if (!scores) {
       const leaderboard = await this.leaderboards.get(id);
       if (!leaderboard) throw new LeaderboardNotFoundException(id, 'database');
+
       await this.cache.set(id, leaderboard);
       scores = await this.cache.getRange(id, start, end);
     }
@@ -99,12 +101,7 @@ export class LeaderboardService {
    * @returns The status of all leaderboards.
    */
   getAllLeaderboards(): LeaderboardStatusDto {
-    return new LeaderboardStatusDto(
-      this.leaderboardSync.getCachedLeaderboardIDs(),
-      this.leaderboardSync.getCurrentLeaderboards(),
-      this.leaderboardSync.getPreviousLeaderboards(),
-      this.leaderboardSync.getAllTimeLeaderboards(),
-    );
+    return this.leaderboardSync.getStatus();
   }
 
   async onModuleInit() {
@@ -141,10 +138,7 @@ export class LeaderboardService {
         this.leaderboardSync.addToPrevious(lb);
       }
     }
-    this.logger.debug(
-      `Synced leaderboards: ${this.leaderboardSync
-        .getSyncedLeaderboards()
-        .join(', ')}`,
-    );
+    const status = this.leaderboardSync.getStatus();
+    this.logger.debug(`LeaderboardSync status: `, status);
   }
 }
