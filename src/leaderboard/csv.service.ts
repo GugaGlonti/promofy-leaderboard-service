@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Readable } from 'node:stream';
 import { GetLeaderboardOptions } from './dto/get-leaderboard-options.dto';
 import { LeaderboardRepository } from './leaderboard.repository';
+import { ApiResponseNoStatusOptions } from '@nestjs/swagger';
 
 @Injectable()
 export class CsvService {
@@ -49,6 +50,13 @@ export class CsvService {
         }
       },
     });
+  }
+
+  static openApi(): ApiResponseNoStatusOptions {
+    return {
+      description: 'Export leaderboard data as CSV',
+      content: { 'text/csv': { schema: { type: 'string', format: 'binary' } } },
+    };
   }
 }
 

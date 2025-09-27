@@ -19,6 +19,7 @@ import { ResponseHeaderInterceptor } from './interceptor/response-header.interce
 import { LeaderboardService } from './leaderboard.service';
 import { GetPlayerRankOptions } from './dto/get-player-rank-options.dto';
 import { GetLeaderboardOptions } from './dto/get-leaderboard-options.dto';
+import { CsvService } from './csv.service';
 
 @Controller('leaderboards')
 @UseInterceptors(ResponseHeaderInterceptor)
@@ -50,11 +51,7 @@ export class LeaderboardController {
   }
 
   @Get(':id/export')
-  @ApiOkResponse({
-    description: 'Export leaderboard data as CSV',
-    schema: { type: 'string', format: 'binary' },
-  })
-  @ApiNotFoundResponse(LeaderboardNotFoundException.openApi())
+  @ApiOkResponse(CsvService.openApi())
   @ApiNotFoundResponse(LeaderboardNotFoundException.openApi())
   @Header('Content-Disposition', `attachment; filename="leaderboard.csv"`)
   @Header('Content-Type', 'text/csv')
