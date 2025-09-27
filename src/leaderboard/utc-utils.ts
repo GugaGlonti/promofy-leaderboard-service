@@ -60,7 +60,9 @@ export class UTCUtils {
     return today >= start && today <= end;
   }
 
-  static hasDateFilter(startDate: string, endDate: string): boolean {
+  static hasDateFilter(startDate?: string, endDate?: string): boolean {
+    if (!startDate && !endDate) return false;
+
     return (
       startDate !== DateTimeLimit.MIN_DATE.toString() ||
       endDate !== DateTimeLimit.MAX_DATE.toString()

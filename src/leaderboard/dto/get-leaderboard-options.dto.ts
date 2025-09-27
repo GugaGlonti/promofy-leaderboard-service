@@ -13,7 +13,7 @@ export class GetLeaderboardOptions {
     default: DateTimeLimit.MIN_DATE,
     type: String,
   })
-  startDate: string = DateTimeLimit.MIN_DATE;
+  startDate?: string = DateTimeLimit.MIN_DATE;
 
   @IsOptional()
   @IsString()
@@ -23,7 +23,7 @@ export class GetLeaderboardOptions {
     default: DateTimeLimit.MAX_DATE,
     type: String,
   })
-  endDate: string = DateTimeLimit.MAX_DATE;
+  endDate?: string = DateTimeLimit.MAX_DATE;
 
   @IsOptional()
   @Type(() => Number)
