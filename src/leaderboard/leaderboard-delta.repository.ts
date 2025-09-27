@@ -20,12 +20,6 @@ export class LeaderboardDeltaRepository {
     const delta = await this.deltas.save({ playerId, scoreDelta, createdAt });
     const leaderboards = this.leaderboardSync.getActiveLeaderboards();
 
-    this.logger.debug(
-      `Delta: ${delta.id.slice(0, 8)} - lbs: ${leaderboards
-        .map((lb) => lb.id.slice(0, 8))
-        .join(', ')}`,
-    );
-
     await this.deltas
       .createQueryBuilder()
       .relation(LeaderboardDelta, 'leaderboards')
