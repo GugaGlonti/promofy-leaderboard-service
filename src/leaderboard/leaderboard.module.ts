@@ -12,6 +12,7 @@ import { LeaderboardRepository } from './leaderboard.repository';
 import { LeaderboardService } from './leaderboard.service';
 import { StreamProcessingController } from './stream-processing.controller';
 import { StreamProcessingService } from './stream-processing.service';
+import { CsvService } from './csv.service';
 
 export type RedisClient = Redis;
 
@@ -40,6 +41,7 @@ export const RedisProvider: Provider<RedisClient> = {
     StreamProcessingService,
     CacheService,
     LeaderboardSyncService,
+    CsvService,
   ],
   controllers: [LeaderboardController, StreamProcessingController],
 })

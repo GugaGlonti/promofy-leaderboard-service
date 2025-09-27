@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  Header,
+  Res,
   Param,
   Query,
   UseInterceptors,
@@ -8,7 +10,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ApiNotFoundResponse, ApiOkResponse } from '@nestjs/swagger';
-import { GetLeaderboardOptions } from './dto/get-leaderboard-options.dto';
+import type { Response } from 'express';
 import { GetLeaderboardResponse } from './dto/get-leaderboard-response.dto';
 import { LeaderboardStatusDto } from './dto/leaderboard-status.dto';
 import { PlayerRankDto } from './dto/player-rank.dto';
@@ -16,6 +18,7 @@ import { LeaderboardNotFoundException } from './exception/leaderboard-not-found.
 import { ResponseHeaderInterceptor } from './interceptor/response-header.interceptor';
 import { LeaderboardService } from './leaderboard.service';
 import { GetPlayerRankOptions } from './dto/get-player-rank-options.dto';
+import { GetLeaderboardOptions } from './dto/get-leaderboard-options.dto';
 
 @Controller('leaderboards')
 @UseInterceptors(ResponseHeaderInterceptor)
@@ -48,12 +51,20 @@ export class LeaderboardController {
 
   @Get(':id/export')
   @ApiOkResponse({
-    description: 'Export leaderboard data (WIP)',
-    type: String,
+    description: 'Export leaderboard data as CSV',
+    schema: { type: 'string', format: 'binary' },
   })
   @ApiNotFoundResponse(LeaderboardNotFoundException.openApi())
-  exportLeaderboard(@Param('id') id: string) {
-    return { message: `Exporting leaderboard data for id ${id}` };
+  @ApiNotFoundResponse(LeaderboardNotFoundException.openApi())
+  @Header('Content-Disposition', `attachment; filename="leaderboard.csv"`)
+  @Header('Content-Type', 'text/csv')
+  @Header('Transfer-Encoding', 'chunked')
+  exportLeaderboard(
+    @Param('id') id: string,
+    @Query() options: GetLeaderboardOptions,
+    @Res() res: Response,
+  ) {
+    this.leaderboardService.getReadable(id, options).pipe(res);
   }
 
   @Get()

@@ -1,17 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
-
-import { LeaderboardEntry } from './dto/leaderboard-entry.dto';
-import { PlayerRankDto } from './dto/player-rank.dto';
-import { LeaderboardNotFoundException } from './exception/leaderboard-not-found.exception';
+import { Injectable, Logger, Response } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { CacheService } from './cache.service';
 import { GetLeaderboardOptions } from './dto/get-leaderboard-options.dto';
-import { LeaderboardRepository } from './leaderboard.repository';
+import { LeaderboardEntry } from './dto/leaderboard-entry.dto';
 import { LeaderboardStatusDto } from './dto/leaderboard-status.dto';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { LeaderboardSyncService } from './leaderboard-sync.service';
-import { UTCUtils } from './utc-utils';
+import { PlayerRankDto } from './dto/player-rank.dto';
 import { Leaderboard } from './entity/leaderboard.entity';
+import { LeaderboardNotFoundException } from './exception/leaderboard-not-found.exception';
 import { PlayerRankNotFoundException } from './exception/player-rank-not-found.exception';
+import { LeaderboardSyncService } from './leaderboard-sync.service';
+import { LeaderboardRepository } from './leaderboard.repository';
+import { UTCUtils } from './utc-utils';
+import { CsvService } from './csv.service';
+import { Readable } from 'node:stream';
 
 @Injectable()
 export class LeaderboardService {
@@ -21,6 +22,7 @@ export class LeaderboardService {
     private readonly leaderboards: LeaderboardRepository,
     private readonly cache: CacheService,
     private readonly leaderboardSync: LeaderboardSyncService,
+    private readonly csvService: CsvService,
   ) {}
 
   /**
@@ -103,6 +105,16 @@ export class LeaderboardService {
     if (!scores) throw new LeaderboardNotFoundException(id, 'cache');
 
     return PlayerRankDto.ofScores(userId, playerRank + 1, scores);
+  }
+
+  /**
+   * Exports the leaderboard data as a readable stream.
+   * @param id The ID of the leaderboard to export.
+   * @param options Options for filtering and pagination.
+   * @returns A readable stream of the leaderboard data.
+   */
+  getReadable(id: string, options: GetLeaderboardOptions): Readable {
+    return this.csvService.getReadableStream(id, options);
   }
 
   /**
