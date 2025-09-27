@@ -1,4 +1,4 @@
-import { Injectable, Logger, Response } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CacheService } from './cache.service';
 import { GetLeaderboardOptions } from './dto/get-leaderboard-options.dto';
