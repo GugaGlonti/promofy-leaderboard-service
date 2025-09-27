@@ -2,7 +2,7 @@ import { LeaderboardSyncService } from './leaderboard-sync.service';
 import { Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { LeaderboardEntry } from './dto/leaderboard-entry.dto';
 import type { RedisClient } from './leaderboard.module';
-import { CacheException } from './exception/cache.exception';
+import { CacheException } from './exception/Cache.exception';
 
 export class CacheService implements OnModuleInit {
   private readonly logger = new Logger(CacheService.name);
