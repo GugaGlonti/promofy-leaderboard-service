@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Scope } from '@nestjs/common';
 import { Leaderboard } from './entity/leaderboard.entity';
 import { LeaderboardStatusDto } from './dto/leaderboard-status.dto';
 
-@Injectable()
+@Injectable({ scope: Scope.DEFAULT })
 export class LeaderboardSyncService {
   private readonly logger = new Logger(LeaderboardSyncService.name);
 
