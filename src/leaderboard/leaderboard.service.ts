@@ -31,7 +31,7 @@ export class LeaderboardService {
    * @param options Options for filtering and pagination.
    * @returns The leaderboard entries.
    */
-  async getLeaderboard(
+  async getEntries(
     id: string,
     {
       startDate,
@@ -47,14 +47,14 @@ export class LeaderboardService {
 
     if (!isCachable || skipRedis) {
       const options = { startDate, endDate, limit, page, pageSize };
-      return this.leaderboards.getWithOptions(id, options);
+      return this.leaderboards.aggregate(id, options);
     }
 
     const options = { limit, page, pageSize };
     const cachedLeaderboard = await this.cache.get(id, options);
     if (cachedLeaderboard) return cachedLeaderboard;
 
-    const leaderboard = await this.leaderboards.get(id);
+    const leaderboard = await this.leaderboards.aggregate(id);
     if (!leaderboard) throw new LeaderboardNotFoundException(id, 'database');
 
     await this.cache.set(id, leaderboard);
@@ -82,7 +82,7 @@ export class LeaderboardService {
 
     let playerRank = await this.cache.getRank(id, userId);
     if (!playerRank) {
-      const leaderboard = await this.leaderboards.get(id);
+      const leaderboard = await this.leaderboards.aggregate(id);
       if (!leaderboard) throw new LeaderboardNotFoundException(id, 'database');
 
       await this.cache.set(id, leaderboard);
@@ -96,7 +96,7 @@ export class LeaderboardService {
 
     let scores = await this.cache.getRange(id, start, end);
     if (!scores) {
-      const leaderboard = await this.leaderboards.get(id);
+      const leaderboard = await this.leaderboards.aggregate(id);
       if (!leaderboard) throw new LeaderboardNotFoundException(id, 'database');
 
       await this.cache.set(id, leaderboard);
@@ -121,7 +121,7 @@ export class LeaderboardService {
    * Fetches the status of all leaderboards, including cached IDs and current/previous/all-time leaderboards.
    * @returns The status of all leaderboards.
    */
-  getAllLeaderboards(): LeaderboardStatusDto {
+  getStatus(): LeaderboardStatusDto {
     return this.leaderboardSync.getStatus();
   }
 
@@ -149,7 +149,7 @@ export class LeaderboardService {
 
   private async refreshCurrentLeaderboards() {
     this.logger.debug('Refreshing current leaderboard IDs');
-    const leaderboards = await this.leaderboards.findAll();
+    const leaderboards = await this.leaderboards.find();
 
     this.logger.debug(`Refreshed current leaderboards:`);
     this.leaderboardSync.clearActiveLeaderboards();

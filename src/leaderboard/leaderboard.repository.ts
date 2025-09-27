@@ -15,7 +15,7 @@ export class LeaderboardRepository {
     private readonly leaderboard: Repository<Leaderboard>,
   ) {}
 
-  async findAll(): Promise<Leaderboard[]> {
+  async find(): Promise<Leaderboard[]> {
     this.logger.debug('Fetching all leaderboards from the database');
     return this.leaderboard.find();
   }
@@ -53,35 +53,35 @@ export class LeaderboardRepository {
       if (limit > 0 && offset >= limit) return [];
       const take = limit > 0 ? Math.min(pageSize, limit - offset) : pageSize;
 
-    const minDate = DateTimeLimit.MIN_DATE?.toString();
-    const maxDate = DateTimeLimit.MAX_DATE?.toString();
-    if (startDate !== minDate || endDate !== maxDate) {
-      params.push(startDate, endDate);
-      dateFilter = `AND d."CREATED_AT" BETWEEN $2 AND $3`;
-    }
+      const minDate = DateTimeLimit.MIN_DATE?.toString();
+      const maxDate = DateTimeLimit.MAX_DATE?.toString();
+      if (startDate !== minDate || endDate !== maxDate) {
+        params.push(startDate, endDate);
+        dateFilter = `AND d."CREATED_AT" BETWEEN $2 AND $3`;
+      }
 
-    params.push(take, offset);
+      params.push(take, offset);
       limitOffset = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
     }
 
     const sql = `
-      SELECT
-          d."PLAYER_ID" AS "userId",
-          SUM(d."SCORE_DELTA") AS "score"
-      
-      FROM "LEADERBOARDS" l
+    SELECT
+        d."PLAYER_ID" AS "userId",
+        SUM(d."SCORE_DELTA") AS "score"
+    
+    FROM "LEADERBOARDS" l
     INNER JOIN
     "LEADERBOARD_DELTA_MAPPING" ldm ON ldm."LEADERBOARD_ID" = l."ID"
     INNER JOIN
     "LEADERBOARD_DELTAS" d ON d."ID" = ldm."DELTA_ID"
-      
-      WHERE l."ID" = $1
-        ${dateFilter}
+    
+    WHERE l."ID" = $1
+      ${dateFilter}
 
-      GROUP BY d."PLAYER_ID"
-      ORDER BY "score" DESC
+    GROUP BY d."PLAYER_ID"
+    ORDER BY "score" DESC
     ${limitOffset}
-    `;
+  `;
 
     return this.leaderboard.query<LeaderboardEntry[]>(sql, params);
   }

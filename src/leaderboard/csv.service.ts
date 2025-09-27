@@ -67,7 +67,7 @@ async function fetchLeaderboardPage(
   page: number,
   pageSize: number,
 ) {
-  return leaderboardRepository.getWithOptions(id, {
+  return leaderboardRepository.aggregate(id, {
     ...options,
     page,
     pageSize,

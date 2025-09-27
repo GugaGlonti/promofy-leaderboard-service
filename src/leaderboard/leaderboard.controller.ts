@@ -34,7 +34,7 @@ export class LeaderboardController {
     @Param('id') id: string,
     @Query() options: GetLeaderboardOptions,
   ): Promise<GetLeaderboardResponse> {
-    const entries = await this.leaderboardService.getLeaderboard(id, options);
+    const entries = await this.leaderboardService.getEntries(id, options);
     return new GetLeaderboardResponse(entries, entries.length);
   }
 
@@ -67,6 +67,6 @@ export class LeaderboardController {
   @Get()
   @ApiOkResponse(LeaderboardStatusDto.openApi())
   getAllLeaderboards(): LeaderboardStatusDto {
-    return this.leaderboardService.getAllLeaderboards();
+    return this.leaderboardService.getStatus();
   }
 }
