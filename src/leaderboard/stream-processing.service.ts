@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { LeaderboardDeltaRepository } from 'src/leaderboard/leaderboard-delta.repository';
+
 import { NewPlayerEvent } from '../common/event/new-player.event';
 import { ScoreUpdateEvent } from '../common/event/score-update.event';
 import { CacheService } from './cache.service';
+import { LeaderboardDeltaRepository } from './leaderboard-delta.repository';
 
 @Injectable()
 export class StreamProcessingService {
