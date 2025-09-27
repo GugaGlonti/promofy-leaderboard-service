@@ -18,8 +18,6 @@ export const fakeDataConfig = registerAs('fakeData', () => ({
   initialPlayerScore: Number(
     process.env.FAKE_DATA_INITIAL_PLAYER_SCORE ?? 1000,
   ),
-
-  startDelay: Number(process.env.FAKE_DATA_START_DELAY ?? 10000),
 }));
 
 export type FakeDataConfig = ConfigType<typeof fakeDataConfig>;

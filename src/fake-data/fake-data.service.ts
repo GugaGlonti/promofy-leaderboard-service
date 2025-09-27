@@ -36,11 +36,8 @@ export class FakeDataService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Connecting to Kafka...');
     await this.kafkaProducer.connect();
 
-    this.logger.log(`Waiting ${this.config.startDelay}ms before starting...`);
-    setTimeout(() => {
-      this.logger.log('Starting to generate fake data...');
-      this.run();
-    }, this.config.startDelay);
+    this.logger.log('Starting to generate fake data...');
+    this.run();
   }
 
   async onModuleDestroy() {
@@ -112,9 +109,6 @@ export class FakeDataService implements OnModuleInit, OnModuleDestroy {
       const event = new KafkaEvent(user.ID, newPlayerEvent);
 
       this.kafkaProducer.emit('new_player', event);
-      this.logger.debug(
-        `Sent new player: ${user.ID} with initial score ${score}`,
-      );
     } catch (error) {
       this.logger.error('Error sending new player:', error);
     }
