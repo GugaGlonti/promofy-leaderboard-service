@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Header,
-  Res,
   Param,
   Query,
   Res,
@@ -42,6 +41,7 @@ export class LeaderboardController {
 
   @Get(':id/players/:userId')
   @ApiOkResponse(PlayerRankDto.openApi())
+  @ApiNotFoundResponse(PlayerRankNotFoundException.openApi())
   @ApiNotFoundResponse(LeaderboardNotFoundException.openApi())
   async getPlayerRank(
     @Param('id') id: string,

@@ -9,8 +9,13 @@ export class LeaderboardNotFoundException extends InternalServerErrorException {
   static openApi(): ApiResponseNoStatusOptions {
     return {
       description: 'Leaderboard not found',
-      type: [LeaderboardNotFoundException],
-      example: new LeaderboardNotFoundException('example-id', 'database'),
+      schema: {
+        example: {
+          message: 'Leaderboard or data for id 123 not found in database',
+          error: 'Not Found',
+          statusCode: 404,
+        },
+      },
     };
   }
 }
