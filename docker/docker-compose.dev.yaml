@@ -32,8 +32,8 @@ services:
         condition: service_healthy
     entrypoint: >
       bash -c "
-        kafka-topics.sh --create --if-not-exists --topic score_update --partitions 3 --replication-factor 1 --bootstrap-server kafka:29092 &&
-        kafka-topics.sh --create --if-not-exists --topic new_player   --partitions 3 --replication-factor 1 --bootstrap-server kafka:29092 &&
+        kafka-topics.sh --create --if-not-exists --topic score_update --partitions 3 --replication-factor 2 --bootstrap-server kafka:29092 &&
+        kafka-topics.sh --create --if-not-exists --topic new_player   --partitions 3 --replication-factor 2 --bootstrap-server kafka:29092 &&
         echo 'Topics created successfully!'
         echo 'You may now start the promofy-leaderboard-service development instance.'
         sleep infinity
