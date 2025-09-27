@@ -143,7 +143,7 @@ export class CacheService implements OnModuleInit {
   }
 
   async incrementCachedLeaderboards(userId: number, scoreDelta: number) {
-    for (const key of this.leaderboardSyncService.getIncrementingLeaderboards()) {
+    for (const key of this.leaderboardSyncService.getActiveAndCachedLeaderboards()) {
       try {
         if (await this.redis.exists(key)) {
           await this.redis.zincrby(key, scoreDelta, userId);

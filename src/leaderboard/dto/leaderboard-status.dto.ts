@@ -10,23 +10,17 @@ interface DisplayLeaderboard {
 
 export class LeaderboardStatusDto {
   cachedLeaderboards: string[];
-  incrementingLeaderboards: string[];
-  currentLeaderboards: DisplayLeaderboard[];
-  previousLeaderboards: DisplayLeaderboard[];
-  allLeaderboards: DisplayLeaderboard[];
+  activeLeaderboards: DisplayLeaderboard[];
+  inactiveLeaderboards: DisplayLeaderboard[];
 
   constructor(
     cachedLeaderboards: string[],
-    incrementingLeaderboards: string[],
-    currentLeaderboards: Leaderboard[],
-    previousLeaderboards: Leaderboard[],
-    allLeaderboards: Leaderboard[],
+    activeLeaderboards: Leaderboard[],
+    inactiveLeaderboards: Leaderboard[],
   ) {
     this.cachedLeaderboards = cachedLeaderboards;
-    this.incrementingLeaderboards = incrementingLeaderboards;
-    this.currentLeaderboards = currentLeaderboards.map(leaderboardToDisplay);
-    this.previousLeaderboards = previousLeaderboards.map(leaderboardToDisplay);
-    this.allLeaderboards = allLeaderboards.map(leaderboardToDisplay);
+    this.activeLeaderboards = activeLeaderboards.map(leaderboardToDisplay);
+    this.inactiveLeaderboards = inactiveLeaderboards.map(leaderboardToDisplay);
   }
 }
 

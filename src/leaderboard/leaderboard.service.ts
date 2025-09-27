@@ -125,6 +125,7 @@ export class LeaderboardService {
   }
 
   private async createCurrentLeaderboards() {
+    this.logger.debug('Creating current leaderboards if not exist');
     const leaderboards: Partial<Leaderboard>[] = [
       Leaderboard.DAILY(),
       Leaderboard.WEEKLY(),
@@ -139,7 +140,7 @@ export class LeaderboardService {
     const leaderboards = await this.leaderboards.findAll();
 
     this.logger.debug(`Refreshed current leaderboards:`);
-    this.leaderboardSync.clearCurrentLeaderboards();
+    this.leaderboardSync.clearActiveLeaderboards();
     for (const lb of leaderboards) {
       if (UTCUtils.todayIsInRange(lb.startDate, lb.endDate)) {
         this.leaderboardSync.addToActive(lb);

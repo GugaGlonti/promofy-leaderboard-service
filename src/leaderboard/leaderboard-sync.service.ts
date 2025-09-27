@@ -8,32 +8,31 @@ export class LeaderboardSyncService {
 
   private readonly cachedLeaderboardIDs = new Set<string>();
   private readonly activeLeaderboards = new Map<string, Leaderboard>();
+  private readonly inactiveLeaderboards = new Map<string, Leaderboard>();
 
-  private readonly allLeaderboards = new Map<string, Leaderboard>();
-  private readonly previousLeaderboards = new Map<string, Leaderboard>();
+  public getActiveLeaderboards(): Leaderboard[] {
+    return Array.from(this.activeLeaderboards.values());
+  }
 
-  public getIncrementingLeaderboards(): string[] {
+  public getActiveAndCachedLeaderboards(): string[] {
     const actives = Array.from(this.activeLeaderboards.keys());
     return actives.filter((id) => this.cachedLeaderboardIDs.has(id));
   }
 
   public addToActive(leaderboard: Leaderboard) {
     this.logger.debug(`Adding to active: ${leaderboard.toString()}`);
-    this.allLeaderboards.set(leaderboard.id, leaderboard);
     this.activeLeaderboards.set(leaderboard.id, leaderboard);
   }
 
   public addToInactive(leaderboard: Leaderboard) {
     this.logger.debug(`Adding to previous: ${leaderboard.toString()}`);
-    this.allLeaderboards.set(leaderboard.id, leaderboard);
-    this.previousLeaderboards.set(leaderboard.id, leaderboard);
+    this.inactiveLeaderboards.set(leaderboard.id, leaderboard);
   }
 
-  public clearCurrentLeaderboards() {
+  public clearActiveLeaderboards() {
     this.logger.debug('Clearing all leaderboard sets');
-    this.allLeaderboards.clear();
     this.activeLeaderboards.clear();
-    this.previousLeaderboards.clear();
+    this.inactiveLeaderboards.clear();
   }
 
   public addIDToCached(leaderboardId: string) {
@@ -54,10 +53,8 @@ export class LeaderboardSyncService {
   public getStatus(): LeaderboardStatusDto {
     return new LeaderboardStatusDto(
       Array.from(this.cachedLeaderboardIDs),
-      this.getIncrementingLeaderboards(),
-      Array.from(this.allLeaderboards.values()),
       Array.from(this.activeLeaderboards.values()),
-      Array.from(this.previousLeaderboards.values()),
+      Array.from(this.inactiveLeaderboards.values()),
     );
   }
 }
