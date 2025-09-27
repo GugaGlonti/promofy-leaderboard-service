@@ -20,7 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "docker:build": "docker build -f docker/Dockerfile -t promofy-leaderboard-service .",
     "dev": "docker-compose -f docker/docker-compose.dev.yaml up --abort-on-container-exit --remove-orphans --renew-anon-volumes",
-    "prod": "docker-compose -f docker/docker-compose.prod.yaml up --abort-on-container-exit --remove-orphans --renew-anon-volumes"
+    "prod": "docker-compose -f docker/docker-compose.prod.yaml up --abort-on-container-exit --remove-orphans --renew-anon-volumes --build"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
