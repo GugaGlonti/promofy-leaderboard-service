@@ -23,11 +23,6 @@ import { fakeDataConfig } from './fake-data.config';
               ),
             },
             producerOnlyMode: true,
-            producer: {
-              allowAutoTopicCreation: configService.getOrThrow<boolean>(
-                'FAKE_DATA_KAFKA_ALLOW_AUTO_TOPIC_CREATION',
-              ),
-            },
           },
         }),
       },
