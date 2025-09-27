@@ -36,8 +36,11 @@ export class FakeDataService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Connecting to Kafka...');
     await this.kafkaProducer.connect();
 
-    this.logger.log('Starting to generate fake data...');
-    this.run();
+    this.logger.log(`Waiting ${this.config.startDelay}ms before starting...`);
+    setTimeout(() => {
+      this.logger.log('Starting to generate fake data...');
+      this.run();
+    }, this.config.startDelay);
   }
 
   async onModuleDestroy() {
