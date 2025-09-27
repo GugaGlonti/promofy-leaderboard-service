@@ -57,4 +57,13 @@ export class LeaderboardSyncService {
       Array.from(this.inactiveLeaderboards.values()),
     );
   }
+
+  public log() {
+    const cached = Array.from(this.cachedLeaderboardIDs);
+    const active = Array.from(this.activeLeaderboards.keys());
+    const inactive = Array.from(this.inactiveLeaderboards.keys());
+    this.logger.log(`Cached IDs: ${cached.join(', ')}`);
+    this.logger.log(`Active Leaderboards: ${active.join(', ')}`);
+    this.logger.log(`Inactive Leaderboards: ${inactive.join(', ')}`);
+  }
 }

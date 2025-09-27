@@ -160,7 +160,6 @@ export class LeaderboardService {
         this.leaderboardSync.addToInactive(lb);
       }
     }
-    const status = this.leaderboardSync.getStatus();
-    this.logger.debug(`LeaderboardSync status: `, status);
+    this.leaderboardSync.log();
   }
 }
