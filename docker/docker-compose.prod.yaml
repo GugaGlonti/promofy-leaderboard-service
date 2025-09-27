@@ -2,6 +2,9 @@ version: '3.9'
 
 services:
   app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     image: promofy-leaderboard-service:latest
     container_name: service
     command: ['node', 'dist/main']
