@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { LeaderboardEntry } from './dto/leaderboard-entry.dto';
 import { PlayerRankDto } from './dto/player-rank.dto';
-import { LeaderboardNotFoundException } from './exception/LeaderboardNotFound.exception';
+import { LeaderboardNotFoundException } from './exception/leaderboard-not-found.exception';
 import { CacheService } from './cache.service';
 import { GetLeaderboardOptions } from './dto/get-leaderboard-options.dto';
 import { LeaderboardRepository } from './leaderboard.repository';
@@ -11,7 +11,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { LeaderboardSyncService } from './leaderboard-sync.service';
 import { UTCUtils } from './utc-utils';
 import { Leaderboard } from './entity/leaderboard.entity';
-import { PlayerRankNotFoundException } from './exception/PlayerRankNotFound.exception';
+import { PlayerRankNotFoundException } from './exception/player-rank-not-found.exception';
 
 @Injectable()
 export class LeaderboardService {
