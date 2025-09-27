@@ -30,40 +30,28 @@ export class LeaderboardRepository {
       .execute();
   }
 
-  async get(id: string): Promise<LeaderboardEntry[]> {
-    this.logger.debug(`Fetching leaderboard for id: ${id}`);
-
-    const sql = `
-      SELECT
-          d."PLAYER_ID" AS "userId",
-          SUM(d."SCORE_DELTA") AS "score"
-      
-      FROM "LEADERBOARDS" l
-      INNER JOIN "LEADERBOARD_DELTA_MAPPING" ldm
-          ON ldm."LEADERBOARD_ID" = l."ID"
-      INNER JOIN "LEADERBOARD_DELTAS" d
-          ON d."ID" = ldm."DELTA_ID"
-
-      WHERE l."ID" = $1
-      GROUP BY d."PLAYER_ID"
-      ORDER BY "score" DESC
-    `;
-
-    return this.leaderboard.query<LeaderboardEntry[]>(sql, [id]);
-  }
-
-  async getWithOptions(
+  async aggregate(id: string): Promise<LeaderboardEntry[]>;
+  async aggregate(
     id: string,
-    { startDate, endDate, limit, page, pageSize }: GetLeaderboardOptions,
+    options: GetLeaderboardOptions,
+  ): Promise<LeaderboardEntry[]>;
+  async aggregate(
+    id: string,
+    options?: GetLeaderboardOptions,
   ): Promise<LeaderboardEntry[]> {
-    this.logger.debug(`Fetching leaderboard for id: ${id} with options`);
-
-    const offset = (page - 1) * pageSize;
-    if (limit > 0 && offset >= limit) return [];
-    const take = limit > 0 ? Math.min(pageSize, limit - offset) : pageSize;
+    this.logger.debug(
+      `Fetching leaderboard for id: ${id}` + (options ? ' with options' : ''),
+    );
 
     const params: any[] = [id];
     let dateFilter = '';
+    let limitOffset = '';
+
+    if (options) {
+      const { startDate, endDate, limit, page, pageSize } = options;
+      const offset = (page - 1) * pageSize;
+      if (limit > 0 && offset >= limit) return [];
+      const take = limit > 0 ? Math.min(pageSize, limit - offset) : pageSize;
 
     const minDate = DateTimeLimit.MIN_DATE?.toString();
     const maxDate = DateTimeLimit.MAX_DATE?.toString();
@@ -73,6 +61,8 @@ export class LeaderboardRepository {
     }
 
     params.push(take, offset);
+      limitOffset = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
+    }
 
     const sql = `
       SELECT
@@ -80,16 +70,17 @@ export class LeaderboardRepository {
           SUM(d."SCORE_DELTA") AS "score"
       
       FROM "LEADERBOARDS" l
-      INNER JOIN "LEADERBOARD_DELTA_MAPPING" ldm
-          ON ldm."LEADERBOARD_ID" = l."ID"
-      INNER JOIN "LEADERBOARD_DELTAS" d
-          ON d."ID" = ldm."DELTA_ID"
+    INNER JOIN
+    "LEADERBOARD_DELTA_MAPPING" ldm ON ldm."LEADERBOARD_ID" = l."ID"
+    INNER JOIN
+    "LEADERBOARD_DELTAS" d ON d."ID" = ldm."DELTA_ID"
       
       WHERE l."ID" = $1
         ${dateFilter}
+
       GROUP BY d."PLAYER_ID"
       ORDER BY "score" DESC
-      LIMIT $${params.length - 1} OFFSET $${params.length}
+    ${limitOffset}
     `;
 
     return this.leaderboard.query<LeaderboardEntry[]>(sql, params);
