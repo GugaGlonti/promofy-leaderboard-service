@@ -11,7 +11,7 @@ import { LeaderboardModule } from './leaderboard/leaderboard.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.development.env`,
+      envFilePath: `.env.development`,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
