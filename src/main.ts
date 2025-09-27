@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,6 +20,22 @@ async function bootstrap() {
       },
     },
   });
+
+  SwaggerModule.setup(
+    'api',
+    app,
+    () =>
+      SwaggerModule.createDocument(
+        app,
+        new DocumentBuilder()
+          .setTitle('Promofy Leaderboard Service API')
+          .setDescription('Promofy Leaderboard Service API Documentation')
+          .setVersion('0.0.1')
+          .addTag('promofy-leaderboard')
+          .build(),
+      ),
+    { jsonDocumentUrl: 'api-json' },
+  );
 
   await app.startAllMicroservices();
   await app.listen(config.getOrThrow<number>('PORT'));
