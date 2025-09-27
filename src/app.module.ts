@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { FakeDataModule } from './fake-data/fake-data.module';
-import { StreamProcessingModule } from './stream-processing/stream-processing.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ScheduleModule } from '@nestjs/schedule';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -32,7 +31,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     }),
     ScheduleModule.forRoot(),
     FakeDataModule,
-    StreamProcessingModule,
     LeaderboardModule,
   ],
   controllers: [AppController],

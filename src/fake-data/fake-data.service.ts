@@ -1,17 +1,18 @@
 import {
-  Injectable,
   Inject,
-  OnModuleInit,
+  Injectable,
   Logger,
   OnModuleDestroy,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
-import { ScoreUpdateEvent } from '../common/event/score-update.event';
+import { KafkaEvent } from '../common/event/kafka-event';
 import { NewPlayerEvent } from '../common/event/new-player.event';
-import { KafkaEvent } from '../common/event/KafkaEvent';
-import { FakeUser } from './dto/FakeUser.type';
-import { fakeDataConfig } from './fake-data.config';
+import { ScoreUpdateEvent } from '../common/event/score-update.event';
 import type { FakeDataConfig } from './fake-data.config';
+import { fakeDataConfig } from './fake-data.config';
+
+type FakeUser = { ID: number; score: number };
 
 @Injectable()
 export class FakeDataService implements OnModuleInit, OnModuleDestroy {
@@ -35,8 +36,11 @@ export class FakeDataService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Connecting to Kafka...');
     await this.kafkaProducer.connect();
 
-    this.logger.log('Starting to generate fake data...');
-    this.run();
+    this.logger.log(`Waiting ${this.config.startDelay}ms before starting...`);
+    setTimeout(() => {
+      this.logger.log('Starting to generate fake data...');
+      this.run();
+    }, this.config.startDelay);
   }
 
   async onModuleDestroy() {
@@ -81,7 +85,6 @@ export class FakeDataService implements OnModuleInit, OnModuleDestroy {
       const event = new KafkaEvent(user.ID, scoreUpdateEvent);
 
       this.kafkaProducer.emit('score_update', event);
-      this.logger.debug(`Sent score update for ${user.ID}: +${scoreDelta}`);
     } catch (error) {
       this.logger.error('Error sending score update:', error);
     }

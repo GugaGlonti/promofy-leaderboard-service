@@ -1,23 +1,32 @@
-import { ConfigService } from '@nestjs/config';
 import { Module, Provider } from '@nestjs/common';
-import { LeaderboardService } from './leaderboard.service';
-import { LeaderboardRepository } from './leaderboard.repository';
-import Redis from 'ioredis';
+import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { LeaderboardDelta } from '../common/entity/leaderboard-delta.entity';
-import { LeaderboardCache } from './leaderboard-cache';
+import Redis from 'ioredis';
+import { CacheService } from './cache.service';
+import { LeaderboardDelta } from './entity/leaderboard-delta.entity';
+import { Leaderboard } from './entity/leaderboard.entity';
+import { LeaderboardDeltaRepository } from './leaderboard-delta.repository';
+import { LeaderboardSyncService } from './leaderboard-sync.service';
 import { LeaderboardController } from './leaderboard.controller';
-import { Leaderboard } from '../common/entity/leaderboard.entity';
+import { LeaderboardRepository } from './leaderboard.repository';
+import { LeaderboardService } from './leaderboard.service';
+import { StreamProcessingController } from './stream-processing.controller';
+import { StreamProcessingService } from './stream-processing.service';
+import { CsvService } from './csv.service';
 
 export type RedisClient = Redis;
 
-const RedisProvider: Provider<RedisClient> = {
+export const RedisProvider: Provider<RedisClient> = {
   inject: [ConfigService],
   provide: 'REDIS_CLIENT',
-  useFactory: (configService: ConfigService): RedisClient => {
+  useFactory: (env: ConfigService): RedisClient => {
     return new Redis({
-      host: configService.getOrThrow<string>('REDIS_HOST'),
-      port: configService.getOrThrow<number>('REDIS_PORT'),
+      host: env.getOrThrow<string>('REDIS_HOST'),
+      port: env.getOrThrow<number>('REDIS_PORT'),
+      maxRetriesPerRequest: env.getOrThrow<number | null>('REDIS_MAX_RETRIES'),
+      enableOfflineQueue: env.getOrThrow<boolean>('REDIS_ENABLE_OFFLINE_QUEUE'),
+      autoResubscribe: env.getOrThrow<boolean>('REDIS_AUTO_RECONNECT'),
+      keepAlive: env.getOrThrow<number>('REDIS_KEEP_ALIVE'),
     });
   },
 };
@@ -26,11 +35,14 @@ const RedisProvider: Provider<RedisClient> = {
   imports: [TypeOrmModule.forFeature([LeaderboardDelta, Leaderboard])],
   providers: [
     LeaderboardService,
-    LeaderboardRepository,
     RedisProvider,
-    LeaderboardCache,
+    LeaderboardDeltaRepository,
+    LeaderboardRepository,
+    StreamProcessingService,
+    CacheService,
+    LeaderboardSyncService,
+    CsvService,
   ],
-  exports: [LeaderboardService, LeaderboardRepository],
-  controllers: [LeaderboardController],
+  controllers: [LeaderboardController, StreamProcessingController],
 })
 export class LeaderboardModule {}
