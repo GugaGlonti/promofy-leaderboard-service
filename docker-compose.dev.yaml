@@ -9,11 +9,10 @@ services:
       KAFKA_CFG_PROCESS_ROLES: 'broker,controller'
       KAFKA_CFG_NODE_ID: 1
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: '1@localhost:9093'
-      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,DOCKER://:29092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,DOCKER://kafka:29092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,DOCKER:PLAINTEXT
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
     healthcheck:
       test:
         ['CMD-SHELL', 'kafka-topics.sh --bootstrap-server kafka:9092 --list']
@@ -23,7 +22,24 @@ services:
       start_period: 60s
     restart: unless-stopped
     networks:
-      - dev-network
+      - app-network
+
+  topics:
+    image: bitnami/kafka:latest
+    container_name: topics
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: >
+      bash -c "
+        kafka-topics.sh --create --if-not-exists --topic score_update --partitions 3 --replication-factor 1 --bootstrap-server kafka:29092 &&
+        kafka-topics.sh --create --if-not-exists --topic new_player   --partitions 3 --replication-factor 1 --bootstrap-server kafka:29092 &&
+        echo 'Topics created successfully!'
+        echo 'You may now start the promofy-leaderboard-service development instance.'
+        sleep infinity
+      "
+    networks:
+      - app-network
 
   redis:
     image: bitnami/redis:latest
@@ -41,7 +57,7 @@ services:
       start_period: 30s
     restart: unless-stopped
     networks:
-      - dev-network
+      - app-network
 
   postgres:
     image: bitnami/postgresql:latest
@@ -60,8 +76,8 @@ services:
       start_period: 30s
     restart: unless-stopped
     networks:
-      - dev-network
+      - app-network
 
 networks:
-  dev-network:
+  app-network:
     driver: bridge

@@ -1,43 +1,39 @@
+version: '3.9'
+
 services:
   app:
-    image: promofy-assignment:latest
-    container_name: promofy-app
+    image: promofy-leaderboard-service:latest
+    container_name: service
     command: ['node', 'dist/main']
     ports:
-      - '4000:3000' # host 4000 → container 3000
+      - '3000:3000'
     environment:
       NODE_ENV: production
-      # --- PostgreSQL ---
       POSTGRES_PORT: 5432
       POSTGRES_HOST: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: leaderboard
       AUTOLOAD_ENTITIES: 'true'
-      SYNCHRONIZE: 'true' # disable in prod
+      SYNCHRONIZE: 'true'
       DROP_SCHEMA: 'false'
-      # --- Redis ---
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_MAX_RETRIES: null
+      REDIS_MAX_RETRIES: 3
       REDIS_ENABLE_OFFLINE_QUEUE: 'true'
       REDIS_AUTO_RECONNECT: 'true'
       REDIS_KEEP_ALIVE: 10000
-      # --- Kafka ---
       KAFKA_BROKERS: kafka:9092
       KAFKA_CONSUMER_GROUP_ID: stream-processing-group
       KAFKA_CLIENT_ID: stream-processing-service
       FAKE_DATA_KAFKA_CLIENT_ID: fake-data-producer
-      FAKE_DATA_KAFKA_ALLOW_AUTO_TOPIC_CREATION: 'true'
       KAFKAJS_NO_PARTITIONER_WARNING: '1'
-      # --- Fake Data Producer ---
       FAKE_DATA_CONCURRENT_WORKERS: 1
       FAKE_DATA_SEND_EVENT_INTERVAL: 1000
       FAKE_DATA_SCORE_VARIANCE: 100
       FAKE_DATA_SCORE_UPDATE_PROBABILITY: 0.7
       FAKE_DATA_SCORE_NEW_PLAYER_PROBABILITY: 0.1
       FAKE_DATA_INITIAL_PLAYER_SCORE: 1000
-      # --- REST API ---
       PORT: 3000
     depends_on:
       kafka:
@@ -46,15 +42,9 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      topics:
+        condition: service_healthy
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
     networks:
       - app-network
 
@@ -62,10 +52,9 @@ services:
     image: bitnami/kafka:3.6
     container_name: kafka
     ports:
-      - '29092:9092' # host 29092 → container 9092
-      - '29093:9093' # host 29093 → container 9093
+      - '9092:9092'
+      - '9093:9093'
     environment:
-      # KRaft mode configuration
       KAFKA_CFG_PROCESS_ROLES: 'broker,controller'
       KAFKA_CFG_NODE_ID: 1
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
@@ -74,15 +63,11 @@ services:
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: 'PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT'
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
-      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
-      # Additional configurations for production
-      KAFKA_CFG_LOG_RETENTION_HOURS: 168 # How many hours to keep a log file before deleting it
-      KAFKA_CFG_LOG_SEGMENT_BYTES: 1073741824 # Set the log segment size to 1GB
-      KAFKA_CFG_LOG_RETENTION_CHECK_INTERVAL_MS: 300000 # How often to check for log retention policies
-      KAFKA_CFG_NUM_PARTITIONS: 3 # Default number of log partitions per topic
-      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 1 # Default replication factor for automatically created topics
-    volumes:
-      - kafka-data:/kafka/logs
+      KAFKA_CFG_LOG_RETENTION_HOURS: 168
+      KAFKA_CFG_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_CFG_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
+      KAFKA_CFG_NUM_PARTITIONS: 3
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 1
     healthcheck:
       test:
         ['CMD-SHELL', 'kafka-topics.sh --bootstrap-server kafka:9092 --list']
@@ -91,14 +76,33 @@ services:
       retries: 5
       start_period: 60s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
+    networks:
+      - app-network
+
+  topics:
+    image: bitnami/kafka:3.6
+    container_name: topics
+    depends_on:
+      - kafka
+    entrypoint: >
+      bash -c "
+        kafka-topics.sh --create --if-not-exists --topic score_update --partitions 3 --replication-factor 1 --bootstrap-server kafka:9092 &&
+        kafka-topics.sh --create --if-not-exists --topic new_player   --partitions 3 --replication-factor 1 --bootstrap-server kafka:9092 &&
+        echo 'Topics created successfully!'
+        echo 'Waiting for promofy-leaderboard-service to start...'
+        sleep infinity
+      "
+    restart: 'no'
+    healthcheck:
+      test: [
+          'CMD-SHELL',
+          "   kafka-topics.sh --bootstrap-server kafka:9092 --list | grep -q 'score_update'
+          &&  kafka-topics.sh --bootstrap-server kafka:9092 --list | grep -q 'new_player'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     networks:
       - app-network
 
@@ -106,12 +110,10 @@ services:
     image: bitnami/redis:7.2
     container_name: redis
     ports:
-      - '6380:6379' # host 6380 → container 6379
+      - '6379:6379'
     environment:
       ALLOW_EMPTY_PASSWORD: 'yes'
       REDIS_DISABLE_COMMANDS: FLUSHDB,FLUSHALL
-    volumes:
-      - redis-data:/bitnami/redis/data
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
@@ -119,14 +121,6 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
     networks:
       - app-network
 
@@ -137,11 +131,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: leaderboard
-      POSTGRESQL_SHARED_PRELOAD_LIBRARIES: pg_stat_statements
     ports:
-      - '5433:5432' # host 5433 → container 5432
-    volumes:
-      - pgdata:/bitnami/postgresql
+      - '5432:5432'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres -d leaderboard']
       interval: 10s
@@ -149,25 +140,9 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
     networks:
       - app-network
 
-networks: # For inter-service communication
+networks:
   app-network:
     driver: bridge
-
-volumes:
-  pgdata:
-    driver: local
-  kafka-data:
-    driver: local
-  redis-data:
-    driver: local

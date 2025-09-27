@@ -18,13 +18,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "docker:build": "docker build -t promofy-assignment .",
-    "docker-compose-dev:up": "docker-compose -f docker-compose.dev.yaml up",
-    "docker-compose-dev:down": "docker-compose -f docker-compose.dev.yaml down",
-    "docker-compose-prod:up": "docker-compose -f docker-compose.prod.yaml up -d",
-    "docker-compose-prod:down": "docker-compose -f docker-compose.prod.yaml down",
-    "prod:start": "npm run docker:build && npm run docker-compose-prod:up",
-    "prod:stop": "npm run docker-compose-prod:down"
+    "docker:build": "docker build -t promofy-leaderboard-service .",
+    "dev": "docker-compose -f docker-compose.dev.yaml up --abort-on-container-exit --remove-orphans --renew-anon-volumes",
+    "prod": "npm run docker:build && docker-compose -f docker-compose.prod.yaml up --abort-on-container-exit --remove-orphans --renew-anon-volumes"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
