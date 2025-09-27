@@ -5,21 +5,23 @@ import {
   Res,
   Param,
   Query,
+  Res,
   UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { ApiNotFoundResponse, ApiOkResponse } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { CsvService } from './csv.service';
+import { GetLeaderboardOptions } from './dto/get-leaderboard-options.dto';
 import { GetLeaderboardResponse } from './dto/get-leaderboard-response.dto';
+import { GetPlayerRankOptions } from './dto/get-player-rank-options.dto';
 import { LeaderboardStatusDto } from './dto/leaderboard-status.dto';
 import { PlayerRankDto } from './dto/player-rank.dto';
 import { LeaderboardNotFoundException } from './exception/leaderboard-not-found.exception';
+import { PlayerRankNotFoundException } from './exception/player-rank-not-found.exception';
 import { ResponseHeaderInterceptor } from './interceptor/response-header.interceptor';
 import { LeaderboardService } from './leaderboard.service';
-import { GetPlayerRankOptions } from './dto/get-player-rank-options.dto';
-import { GetLeaderboardOptions } from './dto/get-leaderboard-options.dto';
-import { CsvService } from './csv.service';
 
 @Controller('leaderboards')
 @UseInterceptors(ResponseHeaderInterceptor)
