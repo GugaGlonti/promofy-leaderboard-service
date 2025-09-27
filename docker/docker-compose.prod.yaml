@@ -50,6 +50,8 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+    mem_limit: 1g
+    cpus: 1.0
 
   kafka:
     image: bitnami/kafka:3.6
@@ -81,6 +83,8 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+    mem_limit: 2g
+    cpus: 1.0
 
   topics:
     image: bitnami/kafka:3.6
@@ -108,6 +112,8 @@ services:
       start_period: 5s
     networks:
       - app-network
+    mem_limit: 512m
+    cpus: 0.5
 
   redis:
     image: bitnami/redis:7.2
@@ -126,6 +132,8 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+    mem_limit: 512m
+    cpus: 0.5
 
   postgres:
     image: bitnami/postgresql:15
@@ -145,6 +153,8 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+    mem_limit: 1g
+    cpus: 1.0
 
 networks:
   app-network:
