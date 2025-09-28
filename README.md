@@ -40,3 +40,7 @@ This will build the project and start the service along with the necessary depen
 
 An extensive API documentation is available via Swagger UI at `http://localhost:3000/api` when the service is running.
 The OpenAPI json file can be found at `http://localhost:3000/api-json`.
+
+## Kafka UI
+
+A Kafka UI is available at `http://localhost:8080` when the service is running.
