@@ -26,6 +26,8 @@ Run the NestJS development server with:
 npm run start:dev
 ```
 
+Wait a few seconds after the logs settle...
+
 ## Kafka UI
 
 A Kafka UI is available at `http://localhost:8080` when the service is running.
