@@ -13,15 +13,15 @@ export class StreamProcessingService {
   ) {}
 
   async initializePlayer(value: NewPlayerEvent) {
-    const { userId, newScore } = value;
+    const { userId, newScore, timestamp } = value;
 
-    await this.leaderboardDeltaRepository.add(userId, newScore);
+    await this.leaderboardDeltaRepository.add(userId, newScore, timestamp);
     await this.cache.incrementCachedLeaderboards(userId, newScore);
   }
 
   async updateScore(value: ScoreUpdateEvent) {
-    const { userId, scoreDelta } = value;
-    await this.leaderboardDeltaRepository.add(userId, scoreDelta);
+    const { userId, scoreDelta, timestamp } = value;
+    await this.leaderboardDeltaRepository.add(userId, scoreDelta, timestamp);
     await this.cache.incrementCachedLeaderboards(userId, scoreDelta);
   }
 }

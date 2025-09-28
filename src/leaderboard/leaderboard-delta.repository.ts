@@ -15,8 +15,8 @@ export class LeaderboardDeltaRepository {
     private readonly leaderboardSync: LeaderboardSyncService,
   ) {}
 
-  async add(playerId: number, scoreDelta: number) {
-    const createdAt = new Date();
+  async add(playerId: number, scoreDelta: number, timestamp: Date) {
+    const createdAt = timestamp || new Date();
     const delta = await this.deltas.save({ playerId, scoreDelta, createdAt });
     const leaderboards = this.leaderboardSync.getActiveLeaderboards();
 
