@@ -2,7 +2,7 @@
 
 Critical microservice for promotional rewards, ensuring accurate, consistent, and auditable leaderboard rankings for reward distribution.
 
-## Setup
+## Quick Start Guide
 
 After cloning the repository, navigate to the project directory and install dependencies:
 
@@ -20,21 +20,15 @@ npm run dev-env
 
 After the services are up, copy the `.env.example` file to `.development.env` and adjust any necessary environment variables if needed.
 
-Run the development server with:
+Run the NestJS development server with:
 
 ```bash
 npm run start:dev
 ```
 
-## Production Environment
+## Technical Design Documentation
 
-For production run the following command to start the service:
-
-```bash
-npm run prod
-```
-
-This will build the project and start the service along with the necessary dependencies.
+The technical design documentation can be found in the `docs` folder, including `technical-design.pdf` and `architecture.drawio`.
 
 ## API Documentation
 
