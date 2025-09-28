@@ -26,15 +26,23 @@ Run the NestJS development server with:
 npm run start:dev
 ```
 
-## Technical Design Documentation
+## Kafka UI
 
-The technical design documentation can be found in the `docs` folder, including `technical-design.pdf` and `architecture.drawio`.
+A Kafka UI is available at `http://localhost:8080` when the service is running.
 
 ## API Documentation
 
 An extensive API documentation is available via Swagger UI at `http://localhost:3000/api` when the service is running.
 The OpenAPI json file can be found at `http://localhost:3000/api-json`.
 
-## Kafka UI
+## Technical Design Documentation
 
-A Kafka UI is available at `http://localhost:8080` when the service is running.
+The technical design documentation can be found in the `docs` folder, including `technical-design.pdf` and `architecture.drawio`.
+
+## Data Flow Diagram
+
+![Data Flow Diagram](./docs/data-flows.png)
+
+## Service Architecture Diagram
+
+![Service Architecture Diagram](./docs/service-architecture.png)
