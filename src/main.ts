@@ -17,6 +17,7 @@ async function bootstrap() {
       },
       consumer: {
         groupId: config.getOrThrow<string>('KAFKA_CONSUMER_GROUP_ID'),
+        enableAutoCommit: false,
       },
     },
   });

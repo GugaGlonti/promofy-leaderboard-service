@@ -6,15 +6,27 @@ const logger = new Logger('KafkaPayloadDecorator');
 
 export const KafkaPayload = createParamDecorator<string | undefined>(
   (property: keyof KafkaEvent<any> | undefined, context: ExecutionContext) => {
-    const { key, value } = context
-      .switchToRpc()
-      .getContext<KafkaContext>()
-      .getMessage();
+    const kafkaContext = context.switchToRpc().getContext<KafkaContext>();
+
+    const consumer = kafkaContext.getConsumer();
+    const message = kafkaContext.getMessage();
+
+    const key = message.key ? Number(message.key) : 0;
+    const value = message.value;
+    const partition = kafkaContext.getPartition();
+    const topic = kafkaContext.getTopic();
 
     if (!key) logger.warn('Message key is missing, defaulting to 0');
-    const message = new KafkaEvent(key ? Number(key) : 0, value);
+    const kafkaEvent = new KafkaEvent(
+      key,
+      value,
+      partition,
+      topic,
+      consumer,
+      message,
+    );
 
-    if (property) return message[property];
-    return message;
+    if (property) return kafkaEvent[property];
+    return kafkaEvent;
   },
 );
