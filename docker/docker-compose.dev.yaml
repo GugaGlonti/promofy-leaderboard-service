@@ -31,11 +31,10 @@ services:
       - '8080:8080'
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
     depends_on:
-      - kafka-1
-      - kafka-2
-      - kafka-3
+      kafka:
+        condition: service_healthy
     networks:
       - app-network
 
