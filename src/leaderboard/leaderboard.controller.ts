@@ -28,6 +28,12 @@ import { LeaderboardService } from './leaderboard.service';
 export class LeaderboardController {
   constructor(private readonly leaderboardService: LeaderboardService) {}
 
+  @Get('status')
+  @ApiOkResponse(LeaderboardStatusDto.openApi())
+  getAllLeaderboards(): LeaderboardStatusDto {
+    return this.leaderboardService.getStatus();
+  }
+
   @Get(':id')
   @ApiOkResponse(GetLeaderboardResponse.openApi())
   @ApiNotFoundResponse(LeaderboardNotFoundException.openApi())
@@ -64,11 +70,5 @@ export class LeaderboardController {
     @Res() res: Response,
   ) {
     this.leaderboardService.getReadable(id, options).pipe(res);
-  }
-
-  @Get('status')
-  @ApiOkResponse(LeaderboardStatusDto.openApi())
-  getAllLeaderboards(): LeaderboardStatusDto {
-    return this.leaderboardService.getStatus();
   }
 }
