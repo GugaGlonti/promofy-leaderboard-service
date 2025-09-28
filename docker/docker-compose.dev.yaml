@@ -16,10 +16,10 @@ services:
     healthcheck:
       test:
         ['CMD-SHELL', 'kafka-topics.sh --bootstrap-server kafka:9092 --list']
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      interval: 5s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
     restart: unless-stopped
     networks:
       - app-network
@@ -38,20 +38,18 @@ services:
     networks:
       - app-network
 
-  topics:
-    image: bitnami/kafka:latest
-    container_name: topics
+  fake-data:
+    build:
+      context: ../fake-data-producer
+      dockerfile: Dockerfile
+    container_name: fake-data
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      CONCURRENT_WORKERS: 1
+      SEND_EVENT_INTERVAL: 1000
     depends_on:
       kafka:
         condition: service_healthy
-    entrypoint: >
-      bash -c "
-        kafka-topics.sh --create --if-not-exists --topic score_update --partitions 3 --replication-factor 1 --bootstrap-server kafka:29092 &&
-        kafka-topics.sh --create --if-not-exists --topic new_player   --partitions 3 --replication-factor 1 --bootstrap-server kafka:29092 &&
-        echo 'Topics created successfully!'
-        echo 'You may now start the promofy-leaderboard-service development instance.'
-        sleep infinity
-      "
     networks:
       - app-network
 

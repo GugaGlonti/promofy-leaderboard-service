@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
-import { NewPlayerEvent } from '../common/event/new-player.event';
-import { ScoreUpdateEvent } from '../common/event/score-update.event';
+import { NewPlayerEvent } from './event/new-player.event';
+import { ScoreUpdateEvent } from './event/score-update.event';
 import { CacheService } from './cache.service';
 import { LeaderboardDeltaRepository } from './leaderboard-delta.repository';
 

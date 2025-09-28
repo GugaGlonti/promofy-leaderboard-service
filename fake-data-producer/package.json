@@ -1,0 +1,14 @@
+{
+  "name": "fake-data-producer",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4"
+  }
+}

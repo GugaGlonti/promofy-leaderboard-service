@@ -19,7 +19,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "docker:build": "docker build -f docker/Dockerfile -t promofy-leaderboard-service .",
-    "dev": "docker-compose -f docker/docker-compose.dev.yaml up --abort-on-container-exit --remove-orphans --renew-anon-volumes",
+    "dev": "docker-compose -f docker/docker-compose.dev.yaml up --abort-on-container-exit --remove-orphans --renew-anon-volumes --build",
     "prod": "docker-compose -f docker/docker-compose.prod.yaml up --abort-on-container-exit --remove-orphans --renew-anon-volumes --build"
   },
   "dependencies": {

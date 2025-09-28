@@ -4,7 +4,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { FakeDataModule } from './fake-data/fake-data.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 
 @Module({
@@ -30,7 +29,6 @@ import { LeaderboardModule } from './leaderboard/leaderboard.module';
       }),
     }),
     ScheduleModule.forRoot(),
-    FakeDataModule,
     LeaderboardModule,
   ],
   controllers: [AppController],

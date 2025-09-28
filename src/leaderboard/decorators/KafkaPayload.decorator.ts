@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext, Logger } from '@nestjs/common';
 import { KafkaContext } from '@nestjs/microservices';
-import { KafkaEvent } from '../../common/event/kafka-event';
+import { KafkaEvent } from '../event/kafka-event';
 
 const logger = new Logger('KafkaPayloadDecorator');
 
@@ -12,9 +12,9 @@ export const KafkaPayload = createParamDecorator<string | undefined>(
       .getMessage();
 
     if (!key) logger.warn('Message key is missing, defaulting to 0');
-    const kafkaEvent = new KafkaEvent(key ? Number(key) : 0, value);
+    const message = new KafkaEvent(key ? Number(key) : 0, value);
 
-    if (property) return kafkaEvent[property];
-    return kafkaEvent;
+    if (property) return message[property];
+    return message;
   },
 );
