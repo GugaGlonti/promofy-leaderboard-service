@@ -8,7 +8,11 @@ const newPlayerProbability = Number(process.env.NEW_PLAYER_PROBABILITY) || 0.2;
 const variance = Number(process.env.SCORE_VARIANCE) || 10;
 const kafkaBrokers = (process.env.KAFKA_BROKERS || 'localhost:9092').split(',');
 
-const kafka = new Kafka({ brokers: kafkaBrokers });
+const kafka = new Kafka({
+  clientId: 'fake-data-producer',
+  brokers: kafkaBrokers,
+  retry: { initialRetryTime: 300, retries: 10 },
+});
 const producer = kafka.producer();
 const admin = kafka.admin();
 
