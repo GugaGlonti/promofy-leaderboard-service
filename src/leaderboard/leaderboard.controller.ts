@@ -66,7 +66,7 @@ export class LeaderboardController {
     this.leaderboardService.getReadable(id, options).pipe(res);
   }
 
-  @Get()
+  @Get('status')
   @ApiOkResponse(LeaderboardStatusDto.openApi())
   getAllLeaderboards(): LeaderboardStatusDto {
     return this.leaderboardService.getStatus();
