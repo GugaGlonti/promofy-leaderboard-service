@@ -63,10 +63,10 @@ services:
       REDIS_DISABLE_COMMANDS: FLUSHDB,FLUSHALL
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      interval: 5s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
     restart: unless-stopped
     networks:
       - app-network
@@ -82,10 +82,10 @@ services:
       - '5432:5432'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres -d leaderboard']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      interval: 5s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
     restart: unless-stopped
     networks:
       - app-network
