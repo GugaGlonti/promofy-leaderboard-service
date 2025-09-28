@@ -10,7 +10,7 @@ import { LeaderboardModule } from './leaderboard/leaderboard.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+      envFilePath: '.development.env',
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
