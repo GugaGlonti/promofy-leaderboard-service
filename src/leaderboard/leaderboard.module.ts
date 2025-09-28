@@ -27,6 +27,8 @@ export const RedisProvider: Provider<RedisClient> = {
       enableOfflineQueue: env.getOrThrow<boolean>('REDIS_ENABLE_OFFLINE_QUEUE'),
       autoResubscribe: env.getOrThrow<boolean>('REDIS_AUTO_RECONNECT'),
       keepAlive: env.getOrThrow<number>('REDIS_KEEP_ALIVE'),
+      retryStrategy: (times: number) => Math.min(times * 50, 2000),
+      connectTimeout: env.get<number>('REDIS_CONNECTION_TIMEOUT', 10000),
     });
   },
 };
