@@ -15,7 +15,7 @@ npm install
 In order to develop the service, you will need start a Kafka, a Redis and a Postgres instance. You can use Docker to run these services locally:
 
 ```bash
-npm run dev
+npm run dev-env
 ```
 
 After the services are up, copy the `.env.example` file to `.development.env` and adjust any necessary environment variables if needed.
