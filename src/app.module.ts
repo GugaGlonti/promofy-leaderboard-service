@@ -10,22 +10,25 @@ import { LeaderboardModule } from './leaderboard/leaderboard.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.env.development`,
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
+      useFactory: (env: ConfigService) => ({
         type: 'postgres',
-        host: configService.getOrThrow<string>('POSTGRES_HOST'),
-        port: Number(configService.getOrThrow<string>('POSTGRES_PORT')),
-        username: configService.getOrThrow<string>('POSTGRES_USER'),
-        password: configService.getOrThrow<string>('POSTGRES_PASSWORD'),
-        database: configService.getOrThrow<string>('POSTGRES_DB'),
-        autoLoadEntities:
-          configService.getOrThrow<string>('AUTOLOAD_ENTITIES') === 'true',
-        synchronize: configService.getOrThrow<string>('SYNCHRONIZE') === 'true',
-        dropSchema: configService.getOrThrow<string>('DROP_SCHEMA') === 'true',
+        host: env.getOrThrow<string>('POSTGRES_HOST'),
+        port: Number(env.getOrThrow<string>('POSTGRES_PORT')),
+        username: env.getOrThrow<string>('POSTGRES_USER'),
+        password: env.getOrThrow<string>('POSTGRES_PASSWORD'),
+        database: env.getOrThrow<string>('POSTGRES_DB'),
+        autoLoadEntities: env.getOrThrow<boolean>('AUTOLOAD_ENTITIES'),
+        synchronize: env.getOrThrow<boolean>('SYNCHRONIZE'),
+        dropSchema: env.getOrThrow<boolean>('DROP_SCHEMA'),
+        retryAttempts: 10,
+        retryDelay: 3000,
+        logging: env.get<boolean>('TYPEORM_LOGGING', false),
+        logger: 'advanced-console',
       }),
     }),
     ScheduleModule.forRoot(),
